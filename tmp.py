@@ -4,21 +4,24 @@ import re
 import math
 from conversation import *
 import sqlite3
+from shutil import copytree
 
 class S:
   ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']]
-  CURRENT_ACCT = ACCTS[0]
+  CURRENT_ACCT = ACCTS[1]
 
-  path = os.path.join('/Users', 'cyen', 'Library', 'Application Support', 'Adium 2.0', 'Users', 'Default', 'LogsBackup', '.'.join(CURRENT_ACCT))
-
-  acct_logs = os.listdir(path)
+  orig_path = os.path.join('/Users', 'cyen', 'Library', 'Application Support', 'Adium 2.0', 'Users', 'Default', 'LogsBackup', '.'.join(CURRENT_ACCT))
+  path = orig_path+'.bk'
 
   """ Converts old *****.chatlog file to *****.chatlog/*****.xml format,
       removes .DS_Store fields """
   def convert_new_format(self):
+    print '''Backing up your logs and getting ready to operate on backup...'''
+    copytree(self.orig_path, self.path)
+    self.acct_logs = os.listdir(self.path)
+    print '''Converting chatlog structures...'''
     for username in self.acct_logs:
       if username == '.DS_Store': continue
-      print username
       for dir_entry in os.listdir(join(self.path, username)):
         chatlog = join(self.path, username, dir_entry)
         if dir_entry == '.DS_Store': os.remove(chatlog); continue
@@ -49,5 +52,5 @@ class S:
       dict[username] = (ct, size, disksize)
       print username, '\t\t\t', ct, size, disksize
 
-#s = S()
-#s.convert_new_format()
+s = S()
+s.convert_new_format()
