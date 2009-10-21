@@ -25,17 +25,20 @@ class Conversation(object):
     self.size = getsize(file_nm)
     self.block_size = get_block_size(file_nm)
     xml = BeautifulStoneSoup(open(file_nm, 'r'))
-    msgs = len(xml('message'))
+    msgs = xml('message')
     self.my_msgs = len(xml.findAll({'message': True}, {'sender': screenname}))
-    self.their_msgs = msgs-self.my_msgs
+    self.their_msgs = len(msgs)-self.my_msgs
 
-    evt = xml.find({'event': True}, {'type': 'windowOpened'})
-    self.time = parse(evt['time'].replace('.', ':'))
+    # evt = xml.find({'event': True}, {'type': 'windowOpened'})
+    self.time = parse(msgs[0]['time'].replace('.', ':'))
+    self.endtime = parse(msgs[-1]['time'].replace('.', ':'))
     # self.time = self.time.tzinfo.fromutc(self.time)
 
   def save(self):
     for itm in ['user', 'buddy', 'size', 'block_size', 'my_msgs', 'their_msgs', 'time']:
       assert getattr(self, itm, False)
+    sql = 'INSERT INTO conversations (user_id, buddy_id, byte_size, disk_size, msgs_user, msgs_buddy, time) VALUES ' + (self.user, self.buddy, self.size, self.block_size, self.my_msgs, self.their_msgs, self.time)
+    print sql
     self.conn.execute('''INSERT INTO conversations (user_id, buddy_id,
       byte_size, disk_size, msgs_user, msgs_buddy, time) VALUES ?''',
       (self.user, self.buddy, self.size, self.block_size,

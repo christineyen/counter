@@ -5,20 +5,21 @@ import math
 from conversation import *
 import sqlite3
 from shutil import copytree
+from Tkinter import *
 
 class S:
   ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']]
   CURRENT_ACCT = ACCTS[1]
 
-  orig_path = os.path.join('/Users', 'cyen', 'Library', 'Application Support', 'Adium 2.0', 'Users', 'Default', 'LogsBackup', '.'.join(CURRENT_ACCT))
-  path = orig_path+'.bk'
+  path = os.path.join('/Users', 'cyen', 'Library', 'Application Support', 'Adium 2.0', 'Users', 'Default', 'LogsBackup', '.'.join(CURRENT_ACCT))
+
+  acct_logs = os.listdir(path)
 
   """ Converts old *****.chatlog file to *****.chatlog/*****.xml format,
       removes .DS_Store fields """
   def convert_new_format(self):
-    print '''Backing up your logs and getting ready to operate on backup...'''
-    copytree(self.orig_path, self.path)
-    self.acct_logs = os.listdir(self.path)
+    print '''Backing up your logs...'''
+    copytree(self.path, self.path+'.bk')
     print '''Converting chatlog structures...'''
     for username in self.acct_logs:
       if username == '.DS_Store': continue
@@ -52,5 +53,11 @@ class S:
       dict[username] = (ct, size, disksize)
       print username, '\t\t\t', ct, size, disksize
 
+  def run(self):
+    window = Tk()
+    window.title('harroooo')
+    window.mainloop()
+
 s = S()
-s.convert_new_format()
+s.run()
+# s.convert_new_format()

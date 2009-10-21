@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+    xmlns:sql="com.peterelst.air.sqlite.*"
+    creationComplete="onLoad()">
+    <!-- <mx:Style source="assets/styles.css"/> -->
+    <mx:Script>
+        <![CDATA[
+        	import mx.events.ListEvent;
+        	import model.*;
+        	import mx.messaging.channels.StreamingAMFChannel;
+        private const ACCTS:Array = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']];
+        private const CURRENT_ACCT:Array = ACCTS[0];
+        private var userId:int; 
+        
+		private var dir:File;
+		private var conn:SQLConnection;
+		private var acctLogs:Array;
+		
+		private function onLoad():void {
+			this.dir = File.userDirectory.resolvePath('Library/Application Support/Adium 2.0/Users/Default/LogsBackup/' + CURRENT_ACCT.join('.'));
+			
+			var sqlFile:File = File.applicationStorageDirectory.resolvePath('db/' + CURRENT_ACCT.join('.') + '.db');
+			
+			this.conn = new SQLConnection();
+            
+            try {
+	            conn.open(sqlFile, SQLMode.UPDATE);
+	            conn.attach('incendio', sqlFile);
+                trace('opened database');            	
+            } catch (error:SQLError) {
+                trace("Error opening database");
+				trace("error.message:", error.message);
+				trace("error.details:", error.details);
+				return;
+            }
+			
+			this.createTables();
+//            var xml:String = '/Users/cyen/Library/Application Support/Adium 2.0/Users/Default/LogsBackup/AIM.cyenatwork/arorasarah/arorasarah (2007-08-08T15.00.12-0700).chatlog/arorasarah (2007-08-08T15.00.12-0700).xml';
+//            new BuddyLogEntry(this.conn, this.CURRENT_ACCT[1], 0, 1, xml);
+            
+            convertNewFormat();
+			this.userId = getUser(this.CURRENT_ACCT[1]);
+
+	        for each (var buddyDir:File in this.dir.getDirectoryListing()) {
+	        	if (buddyDir.name == '.DS_STORE') continue;
+	        	this.getSummary(buddyDir.name);
+	        }
+	        
+		}
+		
+		private function getUser(screenName:String):int {
+			var getUserStmt:SQLStatement = new SQLStatement();
+			getUserStmt.sqlConnection = this.conn;
+			getUserStmt.text = 'SELECT id FROM users WHERE screenname = @sn LIMIT 1';
+			getUserStmt.parameters['@sn'] = screenName;
+			
+			var setUserStmt:SQLStatement = new SQLStatement();
+			setUserStmt.sqlConnection = this.conn;
+			
+			getUserStmt.execute();
+			var id:Array = getUserStmt.getResult().data;
+			if (id == null) {
+				trace('inserting record into users for ' + screenName);
+				setUserStmt.text = 'INSERT INTO users (screenname) VALUES ("' + screenName + '");';
+				setUserStmt.execute();
+				getUserStmt.execute();
+				id = getUserStmt.getResult().data;
+			}
+			trace('statement data: ' + id[0]['id']);
+			return int(id[0]['id']);
+		}
+		
+		private function printSummary():Array {
+			var allData:Array = [];
+			this.acctLogs.every(function(buddy) {
+				var dict:Dictionary = getSummary(buddy.name);
+				if (dict != null)
+				    allData.push(dict);
+			});
+			return allData;
+		}
+		
+		private function getSummary(buddyName:String):Dictionary {
+			var dict:Dictionary = new Dictionary();
+			dict['username'] = buddyName;
+			
+			var getStmt:SQLStatement = new SQLStatement();
+			getStmt.sqlConnection = this.conn;
+			
+			getStmt.text = "select count(buddy_id) as ct, sum(size) as sz, max(timestamp) as ts \
+				from conversations inner join users on users.id = conversations.buddy_id \
+				where users.screenname = '"+buddyName+"' group by buddy_id limit 1";
+			getStmt.execute();
+			
+			var data:Array = getStmt.getResult().data;
+			if (data == null || Util.isoToDate(data[0]['ts']) < this.dir.resolvePath(buddyName).modificationDate) {
+				dict['attrs'] = loadSummary(buddyName);
+			} else {
+                trace('got data for ' + buddyName + ': ' + [data[0]['ct'], data[0]['sz']].toString());
+				dict['attrs'] = [data[0]['ct'], data[0]['sz']];
+			}
+			return dict;
+		}
+		
+		private function loadSummary(buddyName:String):Array {
+			trace('calculating data for ' + buddyName)
+			var ct:int = 0;
+			var size:int = 0;
+			var buddyId:int = getUser(buddyName);
+			
+			var cursor:File = this.dir.resolvePath(buddyName); 
+			
+			return recurseOnBuddyDir(buddyId, cursor);
+		}
+		
+		private function recurseOnBuddyDir(buddyId:int, file:File):Array {
+			var tmp:Array = [];
+			var ct:int = 0;
+            var fileSize:int = 0;
+			if (file.isDirectory) {
+				var files:Array = file.getDirectoryListing();
+				for each (var subFile:File in files) {
+					tmp = handleDirEntry(buddyId, subFile);
+					ct += tmp[0];
+					fileSize += tmp[1];
+				}
+			} else {
+				new BuddyLogEntry(this.conn, this.CURRENT_ACCT[1], this.userId, buddyId, file.url);
+				ct = 1;
+				fileSize = file.size;
+			}
+			return [ct, fileSize];
+		}
+		
+		private function clickUserName(e:ListEvent):void {
+			trace(e.item.toString());
+		}
+		
+		private function createTables():void {
+			this.conn.begin();
+			
+			var createStmt:SQLStatement = new SQLStatement();
+			createStmt.sqlConnection = this.conn;
+			var sql:String = "create table if not exists users (id integer primary key, screenname text); ";
+			sql += "create table if not exists conversations (";
+			sql += "id integer primary key, user_id integer, buddy_id integer,";
+            sql += "size integer, initiated integer, msgs_user integer, msgs_buddy integer,";
+            sql += "start_time datetime, end_time datetime, timestamp datetime);";
+            createStmt.text = sql;
+            
+            try {
+            	createStmt.execute();
+            	this.conn.commit();
+                trace('tables created');
+            } catch (error:SQLError) {
+            	this.conn.rollback();
+                trace("Error creating table");
+				trace("CREATE TABLE error:", error);
+				trace("error.message:", error.message);
+				trace("error.details:", error.details);
+				return;
+            }
+		}
+		
+		private function convertNewFormat():void {
+			trace('Backing up your logs...' + dir.url);
+			
+			try {
+//      copytree(self.path, self.path+'.bk')
+//      print '''Converting chatlog structures...'''
+//      for username in self.acct_logs:
+//        if username == '.DS_Store': continue
+//        for dir_entry in os.listdir(join(self.path, username)):
+//          chatlog = join(self.path, username, dir_entry)
+//          if dir_entry == '.DS_Store': os.remove(chatlog); continue
+//          if isfile(chatlog):
+//            dir, fn = split(chatlog)
+//            os.rename(chatlog, chatlog+'2')
+//            os.renames(chatlog+'2', join(dir, fn, fn.rsplit('.',1)[0]+'.xml'))
+//      rmtree(self.path+'bk')
+			} catch (e:Error) {
+				trace('backup already exists. did the process not finish last time?');
+			}
+		}
+        ]]>
+    </mx:Script>	
+    <mx:DataGrid id="summaryGrid"
+    	   dataProvider="" itemClick="eventEdit(event)" x="36" y="83" width="437" height="285">
+        <mx:columns>
+            <mx:DataGridColumn headerText="Column 1" dataField="col1"/>
+            <mx:DataGridColumn headerText="Column 2" dataField="col2"/>
+            <mx:DataGridColumn headerText="Column 3" dataField="col3"/>
+        </mx:columns>
+    </mx:DataGrid>
+</mx:WindowedApplication>

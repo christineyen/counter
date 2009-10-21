@@ -2,9 +2,9 @@ SPEC FOR COUNTER
 
 A user downloads the program and opens it.
 
-Upon its initial run, it automatically backs up your logs / moves to LogsBackup (I have 32 MB of them - make sure that processing 300 MB worth of logs is feasible) and runs convert_new_format() on the folders.
-
-Also upon initial run, existing logs are read into the db (in the future, we'll only care about ones that have been created since we last checked.) and indexed by the db. We're collecting per-conversation stats as well as building indices on words and word counts.
+On load:
+  if '...Logs/...bk' is NOT found, it automatically backs up your logs / moves to LogsBackup (I have 32 MB of them - make sure that processing 300 MB worth of logs is feasible) and runs convert_new_format() on the folders. Also upon initial run, existing logs are read into the db (in the future, we'll only care about ones that have been created since we last checked.) and indexed by the db. We're collecting per-conversation stats as well as building indices on words and word counts.
+  else, just load GUI and prepare to load stats as the user needs
 
 UI-wise, I'm not sure yet how this is going to play out, but here are some of the main statistics I'd like to show:
 
@@ -16,7 +16,11 @@ v1:
 v2:
 - some indication of time of day conversations typically happen
 - GUI work to improve toggling, etc
+- allow multiple local users?
 
 v3:
 - most common words used in conversation
 - how quickly the im happens after the window opens (?) or the user signs on
+
+v4:
+- intelligent contacts matching (vashah@gmail.com vs vivekatmit)
