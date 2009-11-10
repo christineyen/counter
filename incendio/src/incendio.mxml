@@ -35,14 +35,20 @@
 		    new DataField('msgsUser', DataUtil.INT),
 		    new DataField('duration', DataUtil.INT),
 		    new DataField('startTime', DataUtil.DATE));
-	    var dt:DataTable;
-	    var ds:DataSet;
 	    var d:Data;
 	    var graph:UIComponent;
+	    var vis:Visualization;
 		
 		private function onLoad():void {
             this.graph = new UIComponent();
+            graph.x = 300;
+            graph.y = 0;
             this.addChild(graph);
+            this.vis = new Visualization();
+            vis.bounds = new Rectangle(0, 0, 350, 350);
+            vis.x = 0;
+            vis.y = 0;
+            this.graph.addChild(vis);
 			
 			this.dir = File.userDirectory.resolvePath('Library/Application Support/Adium 2.0/Users/Default/LogsBackup/' + CURRENT_ACCT.join('.'));
 			var sqlFile:File = File.applicationStorageDirectory.resolvePath('db/' + CURRENT_ACCT.join('.') + '.db');
@@ -72,24 +78,18 @@
 		private function visualize(arr:Array):void {
 			trace(arr.toString());
 			
-            this.dt = new DataTable(arr, convSchema);
-            this.ds = new DataSet(dt);
-            this.d = Data.fromDataSet(ds);
+            this.d = Data.fromArray(arr);
             trace(d.toString());
             
-            var vis:Visualization = new Visualization(d);
-            vis.bounds = new Rectangle(300, 50, 350, 350);
-            
-            return;
- 
-            vis.operators.add(new AxisLayout("data.msgsTotal", "data.size"));
-//            vis.operators.add(new ColorEncoder("data.cause", Data.NODES,
-//                "lineColor", ScaleType.CATEGORIES));
+            this.vis.data = d;
             vis.operators.add(new ShapeEncoder("data.initiated"));
-            vis.data.nodes.setProperties({fillColor:0, lineWidth:1});
+            vis.operators.add(new AxisLayout("data.msgsTotal", "data.size"));
+
             vis.update();
             
-            this.graph.addChild(vis);
+            return;
+//            vis.operators.add(new ColorEncoder("data.cause", Data.NODES,
+//                "lineColor", ScaleType.CATEGORIES));
 		}
 		
 		private function fetchSummaries():Array {

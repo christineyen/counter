@@ -56,8 +56,15 @@ package model
 //                                                      row['size'], row['initiated'], row['msgs_user'],
 //                                                      row['msgs_buddy'], row['start_time'], row['end_time'],
 //                                                      row['timestamp']));
-                allConvs.push([buddySN, row['size'], row['initiated'], row['msgs_user']+row['msgs_buddy'],
-                              row['msgs_user'], row['end_time']-row['start_time'], row['start_time']]);
+//                allConvs.push([buddySN, row['size'], row['initiated'], row['msgs_user']+row['msgs_buddy'],
+//                              row['msgs_user'], row['end_time']-row['start_time'], row['start_time']]);
+                allConvs.push({ buddySN: buddySN,
+                                size: row['size'],
+                                initiated: row['initiated'],
+                                msgsTotal: row['msgs_user'] + row['msgs_buddy'],
+                                msgsUser: row['msgs_user'],
+                                duration: row['end_time'] - row['start_time'],
+                                startTime: row['start_time'] });
             }
             return allConvs;
 		}
