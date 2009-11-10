@@ -1,24 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
-    xmlns:sql="com.peterelst.air.sqlite.*"
-    creationComplete="onLoad()">
-    <!-- <mx:Style source="assets/styles.css"/> -->
+    creationComplete="onLoad()" width="700" height="500">
+    <mx:Style source="assets/styles.css"/>
     <mx:Script>
         <![CDATA[
+        	import flare.data.DataTable;
+        	import flare.data.DataUtil;
+        	import flare.data.DataField;
+        	import flare.data.DataSource;
+        	import flare.data.DataSet;
+        	import flare.data.DataSchema;
+        	import mx.core.UIComponent;
+        	import flare.vis.operator.encoder.ShapeEncoder;
+        	import flare.scale.ScaleType;
+        	import flare.vis.operator.encoder.ColorEncoder;
+        	import flare.vis.operator.layout.AxisLayout;
+        	import flare.vis.Visualization;
+        	import flare.vis.data.Data;
         	import mx.events.ListEvent;
         	import model.*;
-        	import mx.messaging.channels.StreamingAMFChannel;
         private const ACCTS:Array = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']];
         private const CURRENT_ACCT:Array = ACCTS[0];
         private var userId:int; 
         
 		private var dir:File;
 		private var conn:SQLConnection;
-		private var acctLogs:Array;
+		[Bindable] private var buddies:Array;
+		
+		private var convSchema:DataSchema = new DataSchema(
+		    new DataField('buddySN', DataUtil.STRING),
+		    new DataField('size', DataUtil.INT),
+		    new DataField('initiated', DataUtil.BOOLEAN),
+		    new DataField('msgsTotal', DataUtil.INT),
+		    new DataField('msgsUser', DataUtil.INT),
+		    new DataField('duration', DataUtil.INT),
+		    new DataField('startTime', DataUtil.DATE));
+	    var dt:DataTable;
+	    var ds:DataSet;
+	    var d:Data;
+	    var graph:UIComponent;
 		
 		private function onLoad():void {
-			this.dir = File.userDirectory.resolvePath('Library/Application Support/Adium 2.0/Users/Default/LogsBackup/' + CURRENT_ACCT.join('.'));
+            this.graph = new UIComponent();
+            this.addChild(graph);
 			
+			this.dir = File.userDirectory.resolvePath('Library/Application Support/Adium 2.0/Users/Default/LogsBackup/' + CURRENT_ACCT.join('.'));
 			var sqlFile:File = File.applicationStorageDirectory.resolvePath('db/' + CURRENT_ACCT.join('.') + '.db');
 			
 			this.conn = new SQLConnection();
@@ -35,78 +61,65 @@
             }
 			
 			this.createTables();
-//            var xml:String = '/Users/cyen/Library/Application Support/Adium 2.0/Users/Default/LogsBackup/AIM.cyenatwork/arorasarah/arorasarah (2007-08-08T15.00.12-0700).chatlog/arorasarah (2007-08-08T15.00.12-0700).xml';
-//            new BuddyLogEntry(this.conn, this.CURRENT_ACCT[1], 0, 1, xml);
             
             convertNewFormat();
-			this.userId = getUser(this.CURRENT_ACCT[1]);
-
-	        for each (var buddyDir:File in this.dir.getDirectoryListing()) {
-	        	if (buddyDir.name == '.DS_STORE') continue;
-	        	this.getSummary(buddyDir.name);
-	        }
-	        
+			this.userId = Util.getUser(this.conn, this.CURRENT_ACCT[1]);
+			
+			this.buddies = BuddySummary.getAll(this.conn, this.userId);
 		}
 		
-		private function getUser(screenName:String):int {
-			var getUserStmt:SQLStatement = new SQLStatement();
-			getUserStmt.sqlConnection = this.conn;
-			getUserStmt.text = 'SELECT id FROM users WHERE screenname = @sn LIMIT 1';
-			getUserStmt.parameters['@sn'] = screenName;
+		// TODO: move me
+		private function visualize(arr:Array):void {
+			trace(arr.toString());
 			
-			var setUserStmt:SQLStatement = new SQLStatement();
-			setUserStmt.sqlConnection = this.conn;
-			
-			getUserStmt.execute();
-			var id:Array = getUserStmt.getResult().data;
-			if (id == null) {
-				trace('inserting record into users for ' + screenName);
-				setUserStmt.text = 'INSERT INTO users (screenname) VALUES ("' + screenName + '");';
-				setUserStmt.execute();
-				getUserStmt.execute();
-				id = getUserStmt.getResult().data;
-			}
-			trace('statement data: ' + id[0]['id']);
-			return int(id[0]['id']);
+            this.dt = new DataTable(arr, convSchema);
+            this.ds = new DataSet(dt);
+            this.d = Data.fromDataSet(ds);
+            trace(d.toString());
+            
+            var vis:Visualization = new Visualization(d);
+            vis.bounds = new Rectangle(300, 50, 350, 350);
+            
+            return;
+ 
+            vis.operators.add(new AxisLayout("data.msgsTotal", "data.size"));
+//            vis.operators.add(new ColorEncoder("data.cause", Data.NODES,
+//                "lineColor", ScaleType.CATEGORIES));
+            vis.operators.add(new ShapeEncoder("data.initiated"));
+            vis.data.nodes.setProperties({fillColor:0, lineWidth:1});
+            vis.update();
+            
+            this.graph.addChild(vis);
 		}
 		
-		private function printSummary():Array {
+		private function fetchSummaries():Array {
 			var allData:Array = [];
-			this.acctLogs.every(function(buddy) {
-				var dict:Dictionary = getSummary(buddy.name);
-				if (dict != null)
-				    allData.push(dict);
-			});
+            for each (var buddyDir:File in this.dir.getDirectoryListing()) {
+                if (buddyDir.name == '.DS_STORE') continue;
+                allData.push(this.getSummary(buddyDir.name));
+            }
 			return allData;
 		}
 		
-		private function getSummary(buddyName:String):Dictionary {
-			var dict:Dictionary = new Dictionary();
-			dict['username'] = buddyName;
+		private function getSummary(buddyName:String):BuddySummary {
+			var bs:BuddySummary = new BuddySummary(buddyName, -1, this.conn);
 			
-			var getStmt:SQLStatement = new SQLStatement();
-			getStmt.sqlConnection = this.conn;
-			
-			getStmt.text = "select count(buddy_id) as ct, sum(size) as sz, max(timestamp) as ts \
-				from conversations inner join users on users.id = conversations.buddy_id \
-				where users.screenname = '"+buddyName+"' group by buddy_id limit 1";
-			getStmt.execute();
-			
-			var data:Array = getStmt.getResult().data;
-			if (data == null || Util.isoToDate(data[0]['ts']) < this.dir.resolvePath(buddyName).modificationDate) {
-				dict['attrs'] = loadSummary(buddyName);
+			if (bs.nil() || bs.ts < this.dir.resolvePath(buddyName).modificationDate) {
+				var attrs:Array = loadSummary(buddyName);
+				bs.ct = attrs[0];
+				bs.size = attrs[1];
+				bs.ts = attrs[2];
 			} else {
-                trace('got data for ' + buddyName + ': ' + [data[0]['ct'], data[0]['sz']].toString());
-				dict['attrs'] = [data[0]['ct'], data[0]['sz']];
+                trace('got data for ' + buddyName + ': ' + bs.toString());
 			}
-			return dict;
+			return bs;
 		}
 		
 		private function loadSummary(buddyName:String):Array {
 			trace('calculating data for ' + buddyName)
 			var ct:int = 0;
 			var size:int = 0;
-			var buddyId:int = getUser(buddyName);
+			var buddyId:int = Util.getUser(this.conn, buddyName);
 			
 			var cursor:File = this.dir.resolvePath(buddyName); 
 			
@@ -117,23 +130,40 @@
 			var tmp:Array = [];
 			var ct:int = 0;
             var fileSize:int = 0;
+            var ts:Date = new Date(0, 0, 0, 0, 0, 0);
 			if (file.isDirectory) {
 				var files:Array = file.getDirectoryListing();
 				for each (var subFile:File in files) {
-					tmp = handleDirEntry(buddyId, subFile);
+					tmp = recurseOnBuddyDir(buddyId, subFile);
 					ct += tmp[0];
 					fileSize += tmp[1];
+					if (tmp[2] > ts) ts = tmp[2];
 				}
 			} else {
-				new BuddyLogEntry(this.conn, this.CURRENT_ACCT[1], this.userId, buddyId, file.url);
+				BuddyLogEntry.create(this.conn, this.CURRENT_ACCT[1], buddyId, file.url);
 				ct = 1;
 				fileSize = file.size;
+				ts = file.modificationDate;
 			}
-			return [ct, fileSize];
+			return [ct, fileSize, ts];
 		}
 		
 		private function clickUserName(e:ListEvent):void {
-			trace(e.item.toString());
+			trace(summaryGrid.selectedItem.toString());
+			
+			var bs:BuddySummary = (summaryGrid.selectedItem as BuddySummary);
+			var all:Array = BuddyLogEntry.getAllForUser(this.conn, this.userId, bs.buddyId, bs.buddySN);
+//			trace(all.join("\n"));
+			
+			visualize(all);
+			
+//            var dataArr:Array = [
+//                {buddySN: 'alpha', size: 1000, initiated: true, msgsTotal: 100, msgsUser: 40, duration: 24, startTime: new Date()},
+//                {buddySN: 'alpha', size: 3240, initiated: false, msgsTotal: 150, msgsUser: 10, duration: 43, startTime: new Date()},
+//                {buddySN: 'beta', size: 2028, initiated: false, msgsTotal: 87, msgsUser: 64, duration: 47, startTime: new Date()},
+//                {buddySN: 'gamma', size: 246, initiated: true, msgsTotal: 21, msgsUser: 4, duration: 102, startTime: new Date()},
+//                {buddySN: 'gamma', size: 1000, initiated: false, msgsTotal: 31, msgsUser: 24, duration: 31, startTime: new Date()}
+//            ];
 		}
 		
 		private function createTables():void {
@@ -185,11 +215,13 @@
         ]]>
     </mx:Script>	
     <mx:DataGrid id="summaryGrid"
-    	   dataProvider="" itemClick="eventEdit(event)" x="36" y="83" width="437" height="285">
+    	   dataProvider="{this.buddies}" itemClick="clickUserName(event)"
+           width="40%" height="75%">
         <mx:columns>
-            <mx:DataGridColumn headerText="Column 1" dataField="col1"/>
-            <mx:DataGridColumn headerText="Column 2" dataField="col2"/>
-            <mx:DataGridColumn headerText="Column 3" dataField="col3"/>
+            <mx:DataGridColumn headerText="screen name" minWidth="50" dataField="buddySN"/>
+            <mx:DataGridColumn headerText="#" dataField="ct"/>
+            <mx:DataGridColumn headerText="bytes" dataField="size"/>
+            <mx:DataGridColumn headerText="last modified" minWidth="70" dataField="ts"/>
         </mx:columns>
     </mx:DataGrid>
 </mx:WindowedApplication>
