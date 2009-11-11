@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
-    creationComplete="onLoad()" width="700" height="500">
+    creationComplete="onLoad()" width="950" height="500">
     <mx:Style source="assets/styles.css"/>
     <mx:Script>
         <![CDATA[
+        	import flare.vis.data.ScaleBinding;
+        	import flare.util.Colors;
+        	import flare.util.palette.ColorPalette;
+        	import flare.util.Dates;
         	import flare.data.DataTable;
         	import flare.data.DataUtil;
         	import flare.data.DataField;
@@ -19,8 +23,13 @@
         	import flare.vis.data.Data;
         	import mx.events.ListEvent;
         	import model.*;
+        	
         private const ACCTS:Array = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']];
         private const CURRENT_ACCT:Array = ACCTS[0];
+        private const COLORS:Object = { BLACK: flare.util.Colors.rgba(0, 0, 0),
+                                        WHITE: Colors.rgba(255, 255, 255),
+                                        CERULEAN: Colors.rgba(0, 51, 255),
+                                        GREEN: Colors.rgba(0, 153, 102) };
         private var userId:int; 
         
 		private var dir:File;
@@ -40,15 +49,14 @@
 	    var vis:Visualization;
 		
 		private function onLoad():void {
-            this.graph = new UIComponent();
-            graph.x = 300;
-            graph.y = 0;
-            this.addChild(graph);
             this.vis = new Visualization();
-            vis.bounds = new Rectangle(0, 0, 350, 350);
+            vis.bounds = new Rectangle(400, 0, 350, 350);
             vis.x = 0;
-            vis.y = 0;
+            vis.y = 0; 
+            
+            this.graph = new UIComponent();
             this.graph.addChild(vis);
+            this.addChildAt(graph, 0);
 			
 			this.dir = File.userDirectory.resolvePath('Library/Application Support/Adium 2.0/Users/Default/LogsBackup/' + CURRENT_ACCT.join('.'));
 			var sqlFile:File = File.applicationStorageDirectory.resolvePath('db/' + CURRENT_ACCT.join('.') + '.db');
@@ -77,19 +85,23 @@
 		// TODO: move me
 		private function visualize(arr:Array):void {
 			trace(arr.toString());
-			
             this.d = Data.fromArray(arr);
+            this.d.createEdges("data.startTime");
             trace(d.toString());
             
             this.vis.data = d;
-            vis.operators.add(new ShapeEncoder("data.initiated"));
-            vis.operators.add(new AxisLayout("data.msgsTotal", "data.size"));
-
+            vis.operators.add(new ColorEncoder("data.initiated", Data.NODES,
+                "fillColor", ScaleType.QUANTILE, new ColorPalette([COLORS.BLACK, COLORS.CERULEAN])));
+            vis.operators.add(new ColorEncoder("data.startTime", Data.EDGES,
+                "lineColor", ScaleType.QUANTILE, new ColorPalette([COLORS.BLACK])));
+            var axisLayout:AxisLayout = new AxisLayout("data.startTime", "data.size");
+            axisLayout.xScale.bins = 10;
+            vis.operators.add(axisLayout);
+            vis.data.nodes.setProperties({lineWidth:0, size:0.6});
             vis.update();
             
+            
             return;
-//            vis.operators.add(new ColorEncoder("data.cause", Data.NODES,
-//                "lineColor", ScaleType.CATEGORIES));
 		}
 		
 		private function fetchSummaries():Array {

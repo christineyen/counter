@@ -64,7 +64,8 @@ package model
                                 msgsTotal: row['msgs_user'] + row['msgs_buddy'],
                                 msgsUser: row['msgs_user'],
                                 duration: row['end_time'] - row['start_time'],
-                                startTime: row['start_time'] });
+                                startTime: row['start_time'],
+                                alpha: new Date(Math.random()*7000000+250000000) });
             }
             return allConvs;
 		}

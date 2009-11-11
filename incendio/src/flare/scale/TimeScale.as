@@ -179,24 +179,13 @@ package flare.scale
 		{   
             var a:Array = new Array();
             var span:int = Dates.timeSpan(_dmin, _dmax);
-            var step:Number = Dates.timeStep(span);
-			var max:Number = _smax.time;
+            
             var d:Date = _flush ? Dates.roundTime(scaleMin, span, true) : scaleMin;
+            var step:Number = (_smax.time - _smin.time) / 10; // Dates.timeStep(span);
 
-            if (span < Dates.MONTHS) {
-            	for (var x:Number = _smin.time; x <= max; x += step) {
-            		a.push(new Date(x));
-            	}
-            } else if (span == Dates.MONTHS) {
-            	for (; d.time <= max; d = Dates.addMonths(d,1)) {
-            		a.push(d);
-            	}
-            } else {
-            	var y:int = int(step);
-            	for (; d.time <= max; d = Dates.addYears(d,y)) {
-            		a.push(d);
-            	}
-            }
+	    	for (var x:Number = _smin.time; x <= _smax.time; x += step) {
+	    		a.push(new Date(x));
+	    	}
 			return a;
 		}
 		
