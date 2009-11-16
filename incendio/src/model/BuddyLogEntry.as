@@ -22,6 +22,15 @@ package model
         public var startTime:Date;
         public var endTime:Date;
         public var timestamp:Date;
+        
+        /** Constant indicating the 'size' field of a given BuddyLogEntry. */
+        public static const SIZE:String = "size";
+        /** Constant indicating the 'msgsUser' field of a given BuddyLogEntry. */
+        public static const MSGSUSER:String = "msgs_user";
+        /** Constant indicating the 'msgsTotal' field of a given BuddyLogEntry. */
+        public static const MSGSTOTAL:String = "msgsTotal";
+        /** Constant indicating the 'startTimeTime' field of a given BuddyLogEntry. */
+        public static const STARTTIMETIME:String = "startTimeTime";
 		
 		public function BuddyLogEntry(userId:int = -1, buddySN:String = '', buddyId:int = -1, size:int = -1, initiated:int = 1,
                 msgsUser:int = 0, msgsBuddy:int = 0, startTime:Date = null, endTime:Date = null, timestamp:Date = null) {
@@ -37,37 +46,54 @@ package model
             this.timestamp = timestamp;	
 		}
 		
+		/**
+		 * @returns Array of Objects with key->values with information for each conversation with buddyId
+		 */
 		public static function getAllForUser(conn:SQLConnection, userId:int, buddyId:int, buddySN:String):Array {
             var getStmt:SQLStatement = new SQLStatement();
             getStmt.sqlConnection = conn;
             getStmt.text = "SELECT * FROM conversations WHERE user_id="+userId+" AND buddy_id="+buddyId;
-            getStmt.execute();
             
-            var data:Object = getStmt.getResult().data;
-            if (data == null) {
-            	trace("BuddyLogEntry.getAllForUser is NULL? for user " + userId + " and buddy " + buddyId);
-                return [];
-            }
+            var data:Object = executeStmt(getStmt, "userID: "+userId+", buddyId: "+buddyId);
+            if (data == null) return [];
             
             var allConvs:Array = [];
             for each (var row:Object in data) {
-            	// we used to instantiate BuddyLogEntries per row
-//                allConvs.push(new BuddyLogEntry(row['user_id'], buddySN, row['buddy_id'],
-//                                                      row['size'], row['initiated'], row['msgs_user'],
-//                                                      row['msgs_buddy'], row['start_time'], row['end_time'],
-//                                                      row['timestamp']));
-//                allConvs.push([buddySN, row['size'], row['initiated'], row['msgs_user']+row['msgs_buddy'],
-//                              row['msgs_user'], row['end_time']-row['start_time'], row['start_time']]);
                 allConvs.push({ buddySN: buddySN,
                                 size: row['size'],
                                 initiated: row['initiated'],
                                 msgsTotal: row['msgs_user'] + row['msgs_buddy'],
                                 msgsUser: row['msgs_user'],
                                 duration: row['end_time'] - row['start_time'],
-                                startTime: row['start_time'],
-                                alpha: new Date(Math.random()*7000000+250000000) });
+                                startTime: row['start_time'] });
             }
             return allConvs;
+		}
+		
+		public static function getFieldForUser(conn:SQLConnection, userId:int, field:String, buddyId:int, buddySN:String):Array {
+			var getStmt:SQLStatement = new SQLStatement();
+            getStmt.sqlConnection = conn;
+            var select:String = '';
+            if (field == SIZE || field == MSGSUSER)
+                select = field;
+            else if (field == MSGSTOTAL)
+                select = 'msgs_user + msgs_buddy';
+            else if (field == STARTTIMETIME)
+                select = 'time(start_time)';
+            else
+                throw new Error("invalid field given to getFieldForUser");
+            
+            getStmt.text = "SELECT " + select + " AS field, start_time FROM conversations WHERE user_id="+userId+" AND buddy_id="+buddyId;
+            var data:Object = executeStmt(getStmt, "userID: "+userId+", buddyId: "+buddyId);
+            if (data == null) return [];
+            
+			var allConvs:Array = [];
+			for each (var row:Object in data) {
+				allConvs.push({ buddySN:   buddySN,
+				                field:     row['field'],
+				                startTime: row['start_time']});
+			}
+			return allConvs;
 		}
 		
 		public static function create(conn:SQLConnection, userScreenName:String, buddyId:int, fileNm:String):void {
@@ -134,6 +160,17 @@ package model
             	trace(error.message);
             	trace(error.details);
             }
+		}
+		
+		private static function executeStmt(stmt:SQLStatement, debugStr:String=''):Object {
+			stmt.execute();
+            
+            var data:Object = stmt.getResult().data;
+            if (data == null) {
+                trace("BuddyLogEntry.getAllForUser is NULL? for " + debugStr);
+                return [];
+            }
+            return data;
 		}
 
         public function toString():String {

@@ -4,6 +4,10 @@
     <mx:Style source="assets/styles.css"/>
     <mx:Script>
         <![CDATA[
+        	import flare.util.Shapes;
+        	import flare.vis.operator.layout.StackedAreaLayout;
+        	import flare.vis.data.DataSprite;
+        	import flare.vis.data.DataList;
         	import flare.vis.data.ScaleBinding;
         	import flare.util.Colors;
         	import flare.util.palette.ColorPalette;
@@ -44,7 +48,6 @@
 		    new DataField('msgsUser', DataUtil.INT),
 		    new DataField('duration', DataUtil.INT),
 		    new DataField('startTime', DataUtil.DATE));
-	    var d:Data;
 	    var graph:UIComponent;
 	    var vis:Visualization;
 		
@@ -83,20 +86,33 @@
 		}
 		
 		// TODO: move me
-		private function visualize(arr:Array):void {
-			trace(arr.toString());
-            this.d = Data.fromArray(arr);
-            this.d.createEdges("data.startTime");
-            trace(d.toString());
+		/**
+		 * @params
+		 * arr - an Array of DataLists
+		 **/
+		private function visualize(arg:Object):void {
+//            arg.data.createEdges("data.startTime");
             
-            this.vis.data = d;
-            vis.operators.add(new ColorEncoder("data.initiated", Data.NODES,
-                "fillColor", ScaleType.QUANTILE, new ColorPalette([COLORS.BLACK, COLORS.CERULEAN])));
-            vis.operators.add(new ColorEncoder("data.startTime", Data.EDGES,
-                "lineColor", ScaleType.QUANTILE, new ColorPalette([COLORS.BLACK])));
-            var axisLayout:AxisLayout = new AxisLayout("data.startTime", "data.size");
-            axisLayout.xScale.bins = 10;
-            vis.operators.add(axisLayout);
+            this.vis.data = arg.data;
+            trace(arg.columns.toString());
+//            vis.operators.add(new ColorEncoder("data.initiated", Data.NODES,
+//                "fillColor", ScaleType.QUANTILE, new ColorPalette([COLORS.BLACK, COLORS.CERULEAN])));
+//            vis.operators.add(new ColorEncoder("data.startTime", Data.EDGES,
+//                "lineColor", ScaleType.QUANTILE, new ColorPalette([COLORS.BLACK])));
+            trace(vis.data.nodes.length);
+            vis.data.nodes.visit(function(d:DataSprite):void {
+                d.fillColor = COLORS.BLACK;
+                d.fillAlpha = 1;
+                d.lineAlpha = 1;
+                d.shape = Shapes.POLYGON;
+
+            });
+            
+            vis.operators.add(new StackedAreaLayout(arg.columns));
+                
+//            var axisLayout:AxisLayout = new AxisLayout("data.startTime", "data.size");
+//            axisLayout.xScale.bins = 10;
+//            vis.operators.add(axisLayout);
             vis.data.nodes.setProperties({lineWidth:0, size:0.6});
             vis.update();
             
@@ -160,22 +176,32 @@
 			return [ct, fileSize, ts];
 		}
 		
-		private function clickUserName(e:ListEvent):void {
+		/**
+		 * For each selected item in the list, gathers all BuddyLogEntries per buddy and hands
+		 * visualize() an Array of DataLists 
+		 */
+		private function handleItemClick(e:ListEvent):void {
 			trace(summaryGrid.selectedItem.toString());
 			
-			var bs:BuddySummary = (summaryGrid.selectedItem as BuddySummary);
-			var all:Array = BuddyLogEntry.getAllForUser(this.conn, this.userId, bs.buddyId, bs.buddySN);
-//			trace(all.join("\n"));
+			var selected:Array = summaryGrid.selectedItems;
+			var all:Data = new Data();
+			var cols:Array = [];
+			var bles:Array = [];
+			for each (var bs:Object in selected) {
+				bs = (bs as BuddySummary);
+				bles = BuddyLogEntry.getFieldForUser(this.conn, this.userId, BuddyLogEntry.SIZE, bs.buddyId, bs.buddySN);
+				var sprite:DataSprite = all.addNode();
+				for each (var entry:Object in bles) {
+					trace(entry.buddySN+", startTime: "+entry.startTime+", field: "+entry.field);
+                    cols.push(entry.startTime);
+					sprite.name = entry.buddySN;
+					
+					sprite.data[entry.startTime] = entry.field;
+				}
+			}
 			
-			visualize(all);
-			
-//            var dataArr:Array = [
-//                {buddySN: 'alpha', size: 1000, initiated: true, msgsTotal: 100, msgsUser: 40, duration: 24, startTime: new Date()},
-//                {buddySN: 'alpha', size: 3240, initiated: false, msgsTotal: 150, msgsUser: 10, duration: 43, startTime: new Date()},
-//                {buddySN: 'beta', size: 2028, initiated: false, msgsTotal: 87, msgsUser: 64, duration: 47, startTime: new Date()},
-//                {buddySN: 'gamma', size: 246, initiated: true, msgsTotal: 21, msgsUser: 4, duration: 102, startTime: new Date()},
-//                {buddySN: 'gamma', size: 1000, initiated: false, msgsTotal: 31, msgsUser: 24, duration: 31, startTime: new Date()}
-//            ];
+			trace(cols.sort(Util.dateCmpFunction).toString());
+			visualize({ data: all, columns: cols.sort(Util.dateCmpFunction) });
 		}
 		
 		private function createTables():void {
@@ -227,7 +253,8 @@
         ]]>
     </mx:Script>	
     <mx:DataGrid id="summaryGrid"
-    	   dataProvider="{this.buddies}" itemClick="clickUserName(event)"
+    	   dataProvider="{this.buddies}" itemClick="handleItemClick(event)"
+    	   allowMultipleSelection="true"
            width="40%" height="75%">
         <mx:columns>
             <mx:DataGridColumn headerText="screen name" minWidth="50" dataField="buddySN"/>

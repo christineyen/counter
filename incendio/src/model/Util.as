@@ -48,5 +48,14 @@ package model
                             int(matches[3]), int(matches[4]), int(matches[5]),
                             int(matches[6]));
         }
+        
+        public static function dateCmpFunction(a:Date, b:Date):Number {
+        	if (a.time > b.time)
+        	   return 1;
+    	    else if (a.time < b.time)
+    	       return -1;
+    	    
+	        return 0; 
+        }
 	}
 }
