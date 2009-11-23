@@ -4,6 +4,7 @@
     <mx:Style source="assets/styles.css"/>
     <mx:Script>
         <![CDATA[
+        	import flare.vis.operator.label.StackedAreaLabeler;
         	import flare.util.Shapes;
         	import flare.vis.operator.layout.StackedAreaLayout;
         	import flare.vis.data.DataSprite;
@@ -16,8 +17,6 @@
         	import flare.data.DataUtil;
         	import flare.data.DataField;
         	import flare.data.DataSource;
-        	import flare.data.DataSet;
-        	import flare.data.DataSchema;
         	import mx.core.UIComponent;
         	import flare.vis.operator.encoder.ShapeEncoder;
         	import flare.scale.ScaleType;
@@ -40,20 +39,13 @@
 		private var conn:SQLConnection;
 		[Bindable] private var buddies:Array;
 		
-		private var convSchema:DataSchema = new DataSchema(
-		    new DataField('buddySN', DataUtil.STRING),
-		    new DataField('size', DataUtil.INT),
-		    new DataField('initiated', DataUtil.BOOLEAN),
-		    new DataField('msgsTotal', DataUtil.INT),
-		    new DataField('msgsUser', DataUtil.INT),
-		    new DataField('duration', DataUtil.INT),
-		    new DataField('startTime', DataUtil.DATE));
 	    var graph:UIComponent;
 	    var vis:Visualization;
+	    var layoutName:String;
 		
 		private function onLoad():void {
             this.vis = new Visualization();
-            vis.bounds = new Rectangle(400, 0, 350, 350);
+            vis.bounds = new Rectangle(460, 0, 350, 350);
             vis.x = 0;
             vis.y = 0; 
             
@@ -91,31 +83,25 @@
 		 * arr - an Array of DataLists
 		 **/
 		private function visualize(arg:Object):void {
-//            arg.data.createEdges("data.startTime");
-            
             this.vis.data = arg.data;
-            trace(arg.columns.toString());
-//            vis.operators.add(new ColorEncoder("data.initiated", Data.NODES,
+            
+            
+//            vis.operators.add(new ColorEncoder("data.buddySN", Data.NODES,
 //                "fillColor", ScaleType.QUANTILE, new ColorPalette([COLORS.BLACK, COLORS.CERULEAN])));
 //            vis.operators.add(new ColorEncoder("data.startTime", Data.EDGES,
 //                "lineColor", ScaleType.QUANTILE, new ColorPalette([COLORS.BLACK])));
-            trace(vis.data.nodes.length);
+            
+            vis.operators.clear();
+            vis.operators.add(new StackedAreaLayout(arg.columns));
+            
             vis.data.nodes.visit(function(d:DataSprite):void {
-                d.fillColor = COLORS.BLACK;
-                d.fillAlpha = 1;
-                d.lineAlpha = 1;
+                d.fillColor = Colors.rgba(0x66,0x66,100 + uint(155*Math.random()));
+                d.fillAlpha = 0.75;
+                d.lineAlpha = 0;
                 d.shape = Shapes.POLYGON;
-
             });
             
-            vis.operators.add(new StackedAreaLayout(arg.columns));
-                
-//            var axisLayout:AxisLayout = new AxisLayout("data.startTime", "data.size");
-//            axisLayout.xScale.bins = 10;
-//            vis.operators.add(axisLayout);
-            vis.data.nodes.setProperties({lineWidth:0, size:0.6});
             vis.update();
-            
             
             return;
 		}
@@ -181,26 +167,30 @@
 		 * visualize() an Array of DataLists 
 		 */
 		private function handleItemClick(e:ListEvent):void {
-			trace(summaryGrid.selectedItem.toString());
 			
 			var selected:Array = summaryGrid.selectedItems;
 			var all:Data = new Data();
 			var cols:Array = [];
 			var bles:Array = [];
 			for each (var bs:Object in selected) {
-				bs = (bs as BuddySummary);
+				trace((bs as BuddySummary).toString());
 				bles = BuddyLogEntry.getFieldForUser(this.conn, this.userId, BuddyLogEntry.SIZE, bs.buddyId, bs.buddySN);
 				var sprite:DataSprite = all.addNode();
+				var sum:Number = 0;
+				var list:Array = [];
 				for each (var entry:Object in bles) {
-					trace(entry.buddySN+", startTime: "+entry.startTime+", field: "+entry.field);
                     cols.push(entry.startTime);
 					sprite.name = entry.buddySN;
-					
-					sprite.data[entry.startTime] = entry.field;
+					sum += entry.field;
+					sprite.data[entry.startTime] = sum;
+					list.push(sum);
 				}
+				trace(list.toString());
 			}
 			
-			trace(cols.sort(Util.dateCmpFunction).toString());
+			trace(all.nodes.length);
+			trace(cols.length);
+//			trace(cols.sort(Util.dateCmpFunction).toString());
 			visualize({ data: all, columns: cols.sort(Util.dateCmpFunction) });
 		}
 		

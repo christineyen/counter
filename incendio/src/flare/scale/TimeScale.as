@@ -183,7 +183,7 @@ package flare.scale
             var d:Date = _flush ? Dates.roundTime(scaleMin, span, true) : scaleMin;
             var step:Number = (_smax.time - _smin.time) / 10; // Dates.timeStep(span);
 
-	    	for (var x:Number = _smin.time; x <= _smax.time; x += step) {
+	    	for (var x:Number = _smin.time; x < _smax.time; x += step) {
 	    		a.push(new Date(x));
 	    	}
 			return a;

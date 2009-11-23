@@ -35,6 +35,7 @@ package flare.vis.axis
 		 */		
 		public function update(trans:Transitioner=null):Transitioner
 		{
+			trace("inside update");
 			return trans;
 		}
 		
