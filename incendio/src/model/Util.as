@@ -44,9 +44,10 @@ package model
             
             if (matches.length < 7)
                 matches.push('0');
-            return new Date(int(matches[0]), int(matches[1]), int(matches[2]),
+            var d:Date = new Date(int(matches[0]), int(matches[1]), int(matches[2]),
                             int(matches[3]), int(matches[4]), int(matches[5]),
                             int(matches[6]));
+            return d;
         }
         
         public static function dateCmpFunction(a:Date, b:Date):Number {

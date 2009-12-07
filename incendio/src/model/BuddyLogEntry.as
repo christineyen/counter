@@ -65,36 +65,37 @@ package model
                                 msgsTotal: row['msgs_user'] + row['msgs_buddy'],
                                 msgsUser: row['msgs_user'],
                                 duration: row['end_time'] - row['start_time'],
-                                startTime: row['start_time'] });
+                                date: row['start_time'] });
             }
             return allConvs;
 		}
 		
-		public static function getFieldForUser(conn:SQLConnection, userId:int, field:String, buddyId:int, buddySN:String):Array {
-			var getStmt:SQLStatement = new SQLStatement();
+        public static function getCumuForUser(conn:SQLConnection, userId:int, buddyId:int, buddySN:String):Array {
+            var getStmt:SQLStatement = new SQLStatement();
             getStmt.sqlConnection = conn;
-            var select:String = '';
-            if (field == SIZE || field == MSGSUSER)
-                select = field;
-            else if (field == MSGSTOTAL)
-                select = 'msgs_user + msgs_buddy';
-            else if (field == STARTTIMETIME)
-                select = 'time(start_time)';
-            else
-                throw new Error("invalid field given to getFieldForUser");
+            getStmt.text = "SELECT * FROM conversations WHERE user_id="+userId+" AND buddy_id="+buddyId;
             
-            getStmt.text = "SELECT " + select + " AS field, start_time FROM conversations WHERE user_id="+userId+" AND buddy_id="+buddyId;
             var data:Object = executeStmt(getStmt, "userID: "+userId+", buddyId: "+buddyId);
             if (data == null) return [];
             
-			var allConvs:Array = [];
-			for each (var row:Object in data) {
-				allConvs.push({ buddySN:   buddySN,
-				                field:     row['field'],
-				                startTime: row['start_time']});
-			}
-			return allConvs;
-		}
+            var cumulative:Object = {size: 0, msgsTotal: 0, msgsUser: 0};
+            
+            var allConvs:Array = [];
+            for each (var row:Object in data) {
+            	cumulative.size += row['size'];
+            	cumulative.msgsTotal += row['msgs_user'] + row['msgs_buddy'];
+            	cumulative.msgsUser += row['msgs_user'];
+            	
+                allConvs.push({ buddySN: buddySN,
+                                size: cumulative.size,
+                                initiated: row['initiated'],
+                                msgsTotal: cumulative.msgsTotal,
+                                msgsUser: cumulative.msgsUser,
+                                duration: row['end_time'] - row['start_time'],
+                                date: row['start_time'] });
+            }
+            return allConvs;
+        }
 		
 		public static function create(conn:SQLConnection, userScreenName:String, buddyId:int, fileNm:String):void {
             BuddyLogEntry.conn = conn;

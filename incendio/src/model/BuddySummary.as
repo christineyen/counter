@@ -51,7 +51,7 @@ package model
 			var getStmt:SQLStatement = new SQLStatement();
 			getStmt.sqlConnection = conn;
 			getStmt.text = "SELECT users.screenname as sn, buddy_id as bid, COUNT(buddy_id) AS ct, SUM(size) AS sz, SUM(initiated) as initiated,";
-			getStmt.text += " MAX(timestamp) AS ts";
+			getStmt.text += " DATETIME(MAX(end_time)) AS ts";
             getStmt.text += " FROM conversations INNER JOIN users ON users.id = conversations.buddy_id";
             getStmt.text += " WHERE conversations.user_id = "+userId+" GROUP BY buddy_id";
             getStmt.execute();
@@ -69,7 +69,7 @@ package model
             	bs.ct = int(row['ct']);
             	bs.size = int(row['sz']);
                 bs.initiated = int(row['initiated']) - (bs.ct / 2);
-            	bs.ts = Util.isoToDate(row['ts']);
+            	bs.ts = new Date(Date.parse(row['ts'].replace(/-/g, '/')));
             	all.push(bs);
             }
             return all;

@@ -3,6 +3,12 @@ global {
     backgroundColor: #FFFFFF;
     color: #343434;
 }
+
+AreaSeries {
+	fills: #FF0033, #FF3333, #FF6633;
+}
+
+
 /* Application {
     font-size: 14;
 } */
