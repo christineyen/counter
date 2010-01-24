@@ -9,6 +9,7 @@ from buddy_list import BuddyListCtrl
 
 import wx
 import sys
+import wx.lib.plot as plot
 
 class Lumos(wx.App):
   ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']]
@@ -25,13 +26,22 @@ class Lumos(wx.App):
     frame = wx.Frame(None, -1, 'simpleeeee', None, wx.Size(780, 540))
     frame.CreateStatusBar()
 
-    lst = BuddyListCtrl(frame, all)
     box = wx.BoxSizer(wx.HORIZONTAL)
+    # list nonsense
+    lst = BuddyListCtrl(frame, [(bs.buddy_sn, str(bs.size), bs.start_time.ctime()) for bs in all])
     box.Add(lst, 2, wx.EXPAND | wx.ALL, 3)
-    pnl = wx.Panel(frame, -1)
-    box.Add(pnl, 3, wx.EXPAND)
+    # graphing nonsense
+    data = [(1,2), (2,3), (3, 5), (4, 5), (5, 8), (6, 10)]
+    data2 = [(1, 4), (2, 0), (3, 10), (4, 5), (5, 7), (6, 2)]
+    client = plot.PlotCanvas(frame)
+    line = plot.PolyLine(data, legend='blue', colour='midnight blue', width=1)
+    line2 = plot.PolyLine(data2, legend='green', colour='green', width=1)
+    gc = plot.PlotGraphics([line, line2], 'Line', 'X axiss', 'Y axis')
+    client.SetEnableLegend(True)
+    client.SetFontSizeLegend(10)
+    client.Draw(gc, xAxis=(0, 8), yAxis=(0, 15))
 
-    pnl.SetBackgroundColour(wx.BLACK)
+    box.Add(client, 3, wx.EXPAND)
 
     frame.SetSizer(box)
 

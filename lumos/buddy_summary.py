@@ -9,19 +9,18 @@ def get_all_buddy_summaries(conn, user_id):
   all = []
   for row in cur:
     initiated = row['initiated'] - (row['ct'] / 2) # todo - CHECK this?
-    ts = datetime.fromtimestamp(row['ts'])
-    # all.append(BuddySummary(row['sz'], row['ct'], initiated, row['bid'], row['sn'], ts))
-    all.append((row['sn'], str(row['sz']), ts.ctime()))
+    all.append(BuddySummary(row['sz'], row['ct'], initiated, row['bid'], row['sn'], row['ts']))
   return all
 
 class BuddySummary(object):
-  def __init__(self, size=-1, ct=-1, initiated=0, buddy_id=-1, buddy_sn='', ts=None):
+  def __init__(self, size=-1, ct=-1, initiated=0, buddy_id=-1, buddy_sn='', ts=0):
     self.size = size
     self.ct = ct
     self.initiated = initiated
     self.buddy_id = buddy_id
     self.buddy_sn = buddy_sn
     self.ts = ts
+    self.start_time = datetime.fromtimestamp(ts)
 
   def is_none(self):
     return (self.size < 0) and (self.ct < 0) and (self.initiated < 0) and (self.buddy_sn == '') and (self.ts is None)
