@@ -10,7 +10,8 @@ def get_all_buddy_summaries(conn, user_id):
   for row in cur:
     initiated = row['initiated'] - (row['ct'] / 2) # todo - CHECK this?
     ts = datetime.fromtimestamp(row['ts'])
-    all.append(BuddySummary(row['sz'], row['ct'], initiated, row['bid'], row['sn'], ts))
+    # all.append(BuddySummary(row['sz'], row['ct'], initiated, row['bid'], row['sn'], ts))
+    all.append((row['sn'], str(row['sz']), ts.ctime()))
   return all
 
 class BuddySummary(object):

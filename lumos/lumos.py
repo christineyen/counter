@@ -5,19 +5,39 @@ from shutil import copytree, rmtree
 import datetime
 from buddy_log_entry import *
 from buddy_summary import *
+from buddy_list import BuddyListCtrl
 
-class Lumos(object):
+import wx
+import sys
+
+class Lumos(wx.App):
   ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']]
   CURRENT_ACCT = ACCTS[1]
   path = os.path.join('/Users', 'cyen', 'Library', 'Application Support', 'Adium 2.0', 'Users', 'Default', 'LogsBackup', '.'.join(CURRENT_ACCT))
   db_path = os.path.join('/Users', 'cyen', 'Library', 'Preferences', 'lumos', 'Local Store', 'db', '.'.join(CURRENT_ACCT)+'.db')
   acct_logs = os.listdir(path)
 
-  def __init__(self):
+  def OnInit(self):
     self.conn = self.one_time_setup()
     user_id = get_user_id(self.conn, self.CURRENT_ACCT[-1])
     all = get_all_buddy_summaries(self.conn, user_id)
-    print '\n'.join([summary.to_string() for summary in all])
+
+    frame = wx.Frame(None, -1, 'simpleeeee', None, wx.Size(780, 540))
+    frame.CreateStatusBar()
+
+    lst = BuddyListCtrl(frame, all)
+    box = wx.BoxSizer(wx.HORIZONTAL)
+    box.Add(lst, 2, wx.EXPAND | wx.ALL, 3)
+    pnl = wx.Panel(frame, -1)
+    box.Add(pnl, 3, wx.EXPAND)
+
+    pnl.SetBackgroundColour(wx.BLACK)
+
+    frame.SetSizer(box)
+
+    frame.Center()
+    frame.Show()
+    return True
 
   def one_time_setup(self):
     if os.path.exists(self.db_path):
@@ -92,7 +112,6 @@ class Lumos(object):
           if last_file_ts >= os.stat(join(root, name)).st_mtime: continue
           create_buddy_log_entry(conn, self.CURRENT_ACCT[-1], username, join(root, name))
 
-
-
-l = Lumos()
-
+if __name__ == '__main__':
+  l = Lumos(redirect=False)
+  l.MainLoop()
