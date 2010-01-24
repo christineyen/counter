@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:WindowedApplication xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute"
+    creationComplete="onLoad()" width="950" height="500">
+    <mx:Style source="assets/styles.css"/>
+    <mx:Script>
+        <![CDATA[
+        	import mx.graphics.SolidColor;
+        	import mx.events.DataGridEvent;
+        	import mx.charts.series.AreaSeries;
+        	import mx.collections.ArrayCollection;
+        	import mx.core.UIComponent;
+        	import mx.events.ListEvent;
+        	import model.*;
+        	
+        private const ACCTS:Array = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']];
+        private const CURRENT_ACCT:Array = ACCTS[0];
+        
+        private var userId:int; 
+        
+		private var dir:File;
+		private var conn:SQLConnection;
+		[Bindable] private var buddies:Array;
+	    
+        [Bindable] public var logData:ArrayCollection;
+        [Bindable] public var colors:Array;
+		
+		private function onLoad():void {
+            this.logData = new ArrayCollection();
+			
+			this.dir = File.userDirectory.resolvePath('Library/Application Support/Adium 2.0/Users/Default/LogsBackup/' + CURRENT_ACCT.join('.'));
+			
+			// /Users/cyen/Library/Preferences/incendio/Local Store/db/AIM.cyenatwork.db
+			var sqlFile:File = File.applicationStorageDirectory.resolvePath('db/' + CURRENT_ACCT.join('.') + '.db');
+			
+			this.conn = new SQLConnection();
+            
+            try {
+	            conn.open(sqlFile, SQLMode.UPDATE);
+	            conn.attach('incendio', sqlFile);
+                trace('opened database');            	
+            } catch (error:SQLError) {
+                trace("Error opening database");
+				trace("error.message:", error.message);
+				trace("error.details:", error.details);
+				return;
+            }
+			
+			this.createTables();
+            
+            convertNewFormat();
+			this.userId = Util.getUser(this.conn, this.CURRENT_ACCT[1]);
+			
+			this.buddies = BuddySummary.getAll(this.conn, this.userId);
+			
+			this.colors = [0x990000, 0xCC1111, 0xCC442, 0xCC6633, 0xCC8844, 0xCCAA55, 0xCCCC66, 0xCCEE77];
+			 
+			this.colors = this.colors.map(function(item:*, index:int, array:Array):SolidColor {
+                return new SolidColor(item as uint, 0.7);
+            });
+			trace(this.colors);
+		}
+		
+		private function fetchSummaries():Array {
+			var allData:Array = [];
+            for each (var buddyDir:File in this.dir.getDirectoryListing()) {
+                if (buddyDir.name == '.DS_STORE') continue;
+                allData.push(this.getSummary(buddyDir.name));
+            }
+			return allData;
+		}
+		
+		private function getSummary(buddyName:String):BuddySummary {
+			var bs:BuddySummary = new BuddySummary(buddyName, -1, this.conn);
+			
+			if (bs.nil() || bs.ts < this.dir.resolvePath(buddyName).modificationDate) {
+				var attrs:Array = loadSummary(buddyName);
+				bs.ct = attrs[0];
+				bs.size = attrs[1];
+				bs.ts = attrs[2];
+			} else {
+                trace('got data for ' + buddyName + ': ' + bs.toString());
+			}
+			return bs;
+		}
+		
+		private function loadSummary(buddyName:String):Array {
+			trace('calculating data for ' + buddyName)
+			var ct:int = 0;
+			var size:int = 0;
+			var buddyId:int = Util.getUser(this.conn, buddyName);
+			
+			var cursor:File = this.dir.resolvePath(buddyName); 
+			
+			return recurseOnBuddyDir(buddyId, cursor);
+		}
+		
+		private function recurseOnBuddyDir(buddyId:int, file:File):Array {
+			var tmp:Array = [];
+			var ct:int = 0;
+            var fileSize:int = 0;
+            var ts:Date = new Date(0, 0, 0, 0, 0, 0);
+			if (file.isDirectory) {
+				var files:Array = file.getDirectoryListing();
+				for each (var subFile:File in files) {
+					tmp = recurseOnBuddyDir(buddyId, subFile);
+					ct += tmp[0];
+					fileSize += tmp[1];
+					if (tmp[2] > ts) ts = tmp[2];
+				}
+			} else {
+				BuddyLogEntry.create(this.conn, this.CURRENT_ACCT[1], buddyId, file.url);
+				ct = 1;
+				fileSize = file.size;
+				ts = file.modificationDate;
+			}
+			return [ct, fileSize, ts];
+		}
+		
+		/**
+		 * For each selected item in the list, gathers all BuddyLogEntries per buddy and hands
+		 * visualize() an Array of DataLists 
+		 */
+		private function handleItemClick(e:ListEvent):void {
+			trace("item selected");
+			var selected:Array = summaryGrid.selectedItems;
+			var bs:BuddySummary;
+			this.logData = new ArrayCollection();
+
+            for (var i:int = 0; i < selected.length; i++) {
+            	bs = selected[i] as BuddySummary;
+				trace(bs.toString());
+				
+                this.logData.addItem(new ArrayCollection(BuddyLogEntry.getCumuForUser(this.conn, this.userId, bs.buddyId, bs.buddySN)));
+                var newSeries:AreaSeries = new AreaSeries();
+                newSeries.dataProvider = this.logData.getItemAt(i);
+                newSeries.xField = 'date';
+                newSeries.yField = 'size';
+                newSeries.displayName = bs.buddySN;
+                newSeries.setStyle('areaFill', this.colors[i]);
+                if (i == 0)
+                    myChart.series = [newSeries];
+                else
+                	myChart.series[i] = newSeries;
+			}
+		}
+		
+		private function createTables():void {
+			this.conn.begin();
+			
+			var createStmt:SQLStatement = new SQLStatement();
+			createStmt.sqlConnection = this.conn;
+			var sql:String = "create table if not exists users (id integer primary key, screenname text); ";
+			sql += "create table if not exists conversations (";
+			sql += "id integer primary key, user_id integer, buddy_id integer,";
+            sql += "size integer, initiated integer, msgs_user integer, msgs_buddy integer,";
+            sql += "start_time datetime, end_time datetime, timestamp datetime);";
+            createStmt.text = sql;
+            
+            try {
+            	createStmt.execute();
+            	this.conn.commit();
+                trace('tables created');
+            } catch (error:SQLError) {
+            	this.conn.rollback();
+                trace("Error creating table");
+				trace("CREATE TABLE error:", error);
+				trace("error.message:", error.message);
+				trace("error.details:", error.details);
+				return;
+            }
+		}
+		
+		private function convertNewFormat():void {
+			trace('Backing up your logs...' + dir.url);
+			
+			try {
+//      copytree(self.path, self.path+'.bk')
+//      print '''Converting chatlog structures...'''
+//      for username in self.acct_logs:
+//        if username == '.DS_Store': continue
+//        for dir_entry in os.listdir(join(self.path, username)):
+//          chatlog = join(self.path, username, dir_entry)
+//          if dir_entry == '.DS_Store': os.remove(chatlog); continue
+//          if isfile(chatlog):
+//            dir, fn = split(chatlog)
+//            os.rename(chatlog, chatlog+'2')
+//            os.renames(chatlog+'2', join(dir, fn, fn.rsplit('.',1)[0]+'.xml'))
+//      rmtree(self.path+'bk')
+			} catch (e:Error) {
+				trace('backup already exists. did the process not finish last time?');
+			}
+		}
+
+        ]]>
+    </mx:Script>	
+    <mx:DataGrid id="summaryGrid"
+    	   dataProvider="{this.buddies}" change="handleItemClick(event)"
+    	   allowMultipleSelection="true"
+           width="40%" height="75%">
+        <mx:columns>
+            <mx:DataGridColumn headerText="screen name" minWidth="50" dataField="buddySN"/>
+            <mx:DataGridColumn headerText="#" dataField="ct"/>
+            <mx:DataGridColumn headerText="bytes" dataField="size"/>
+            <mx:DataGridColumn headerText="last modified" minWidth="70" dataField="ts"/>
+        </mx:columns>
+    </mx:DataGrid>
+    
+    <mx:Panel title="Area Chart" x="421" y="0">
+     <mx:AreaChart id="myChart" dataProvider="{logData.getItemAt(0)}" height="350" width="350"
+     showDataTips="true">
+        <mx:horizontalAxis>
+           <mx:DateTimeAxis />
+        </mx:horizontalAxis>
+     </mx:AreaChart>
+     <mx:Legend dataProvider="{myChart}"/>
+  </mx:Panel>
+</mx:WindowedApplication>
