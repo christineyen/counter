@@ -4,6 +4,7 @@ from os.path import split, getsize, join, isfile
 from shutil import copytree, rmtree
 import datetime
 from buddy_log_entry import *
+from buddy_summary import *
 
 class Lumos(object):
   ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']]
@@ -14,10 +15,9 @@ class Lumos(object):
 
   def __init__(self):
     self.conn = self.one_time_setup()
-
-  def setup(self):
-    self.convert_new_format()
-    self.setup_db()
+    user_id = get_user_id(self.conn, self.CURRENT_ACCT[-1])
+    all = get_all_buddy_summaries(self.conn, user_id)
+    print '\n'.join([summary.to_string() for summary in all])
 
   def one_time_setup(self):
     if os.path.exists(self.db_path):
@@ -32,7 +32,7 @@ class Lumos(object):
     conn = sqlite3.connect(self.db_path)
     conn.row_factory = sqlite3.Row
     self.setup_db(conn)
-    self.convert_new_format()
+    self.convert_new_format() # todo: EARLY RETURN! find a way to check need for this
     self.update_from_logs(conn)
     return conn
  
@@ -41,8 +41,8 @@ class Lumos(object):
       (id integer primary key, screenname text);''')
     conn.executescript('''create table if not exists conversations
       (id integer primary key, user_id integer, buddy_id integer,
-      size integer, msgs_user integer, msgs_buddy integer,
-      start_time datetime, end_time datetime, timestamp datetime, file_path string);''')
+      size integer, initiated boolean, msgs_user integer, msgs_buddy integer,
+      start_time float, end_time float, timestamp float, file_path string);''')
     conn.executescript('''create unique index if not exists user_start_time
       on conversations(buddy_id, start_time, end_time);''')
 
@@ -51,6 +51,8 @@ class Lumos(object):
         removes .DS_Store fields """
     print '''Backing up your logs...''' + self.path
     return
+
+
     try:
       copytree(self.path, self.path+'.bk')
       print '''Converting chatlog structures...'''
@@ -86,6 +88,7 @@ class Lumos(object):
       for root, dirs, files in os.walk(join(self.path, username)):
         if not files: continue # empty dir
         for name in files:
+          if name.find('.swp') > -1: continue
           if last_file_ts >= os.stat(join(root, name)).st_mtime: continue
           create_buddy_log_entry(conn, self.CURRENT_ACCT[-1], username, join(root, name))
 

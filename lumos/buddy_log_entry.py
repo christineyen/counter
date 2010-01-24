@@ -20,6 +20,7 @@ def create_buddy_log_entry(conn, user_sn, buddy_sn, file_nm):
 
   my_msgs = len(xml.findAll({'message': True}, {'sender': user_sn}))
   their_msgs = len(msgs)-my_msgs
+  initiated = (msgs[0]['sender'] == user_sn)
   start_time = parse(msgs[0]['time'].replace('.', ':'))
   end_time = parse(msgs[-1]['time'].replace('.', ':'))
 
@@ -30,8 +31,8 @@ def create_buddy_log_entry(conn, user_sn, buddy_sn, file_nm):
   cur = conn.cursor()
   try:
     cur.execute('''INSERT INTO conversations (user_id, buddy_id,
-      size, msgs_user, msgs_buddy, start_time, end_time, timestamp, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-      (user_id, buddy_id, stats.st_size,
+      size, initiated, msgs_user, msgs_buddy, start_time, end_time, timestamp, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+      (user_id, buddy_id, stats.st_size, initiated,
       my_msgs, their_msgs, time.mktime(start_time.timetuple()), time.mktime(end_time.timetuple()),
       time.time(), file_nm))
     conn.commit()

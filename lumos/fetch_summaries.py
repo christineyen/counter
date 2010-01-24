@@ -5,20 +5,6 @@ import datetime
 
 sns_to_ids = {}
 
-def get_all(conn, user_id):
-  cur = conn.cursor()
-  cur.execute('SELECT users.screenname as sn, buddy_id as bid, COUNT(buddy_id) AS ct, \
-              SUM(size) AS sz, SUM(initiated) as initiated, DATETIME(MAX(end_time)) AS ts \
-              FROM conversations INNER JOIN users ON users.id = conversations.buddy_id \
-              WHERE conversations.user_id = '+user_id+' GROUP BY buddy_id')
-  all = []
-  for row in cur:
-    print("0: " + row['sn'] + ", 1: " + row['ct'] + ", 2: " + row['sz'] + ", 3: " + row['ts'])
-    initiated = row['initiated'] - (row['ct'] / 2) # todo - CHECK this?
-    ts = datetime.datetime.strptime(row['ts'], '%Y-%m-%d %H:%M:%S')
-    all.append(BuddySummary(row['sz'], row['ct'], initiated, row['bid'], row['sn'], ts))
-  return all
-
 def get_cum_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
   cur = conn.cursor()
   cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?', (user_id, buddy_id))
