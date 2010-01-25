@@ -3,13 +3,11 @@ import os
 from os.path import split, getsize, join, isfile
 from shutil import copytree, rmtree
 import datetime
+from main_frame import MainFrame
 from buddy_log_entry import *
 from buddy_summary import *
-from buddy_list import BuddyListCtrl
 
 import wx
-import sys
-import wx.lib.plot as plot
 
 class Lumos(wx.App):
   ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']]
@@ -21,31 +19,8 @@ class Lumos(wx.App):
   def OnInit(self):
     self.conn = self.one_time_setup()
     user_id = get_user_id(self.conn, self.CURRENT_ACCT[-1])
-    all = get_all_buddy_summaries(self.conn, user_id)
 
-    frame = wx.Frame(None, -1, 'simpleeeee', None, wx.Size(780, 540))
-    frame.CreateStatusBar()
-
-    box = wx.BoxSizer(wx.HORIZONTAL)
-    # list nonsense
-    lst = BuddyListCtrl(frame, [(bs.buddy_sn, str(bs.size), bs.start_time.ctime()) for bs in all])
-    box.Add(lst, 2, wx.EXPAND | wx.ALL, 3)
-    # graphing nonsense
-    data = [(1,2), (2,3), (3, 5), (4, 5), (5, 8), (6, 10)]
-    data2 = [(1, 4), (2, 0), (3, 10), (4, 5), (5, 7), (6, 2)]
-    client = plot.PlotCanvas(frame)
-    line = plot.PolyLine(data, legend='blue', colour='midnight blue', width=1)
-    line2 = plot.PolyLine(data2, legend='green', colour='green', width=1)
-    gc = plot.PlotGraphics([line, line2], 'Line', 'X axiss', 'Y axis')
-    client.SetEnableLegend(True)
-    client.SetFontSizeLegend(10)
-    client.Draw(gc, xAxis=(0, 8), yAxis=(0, 15))
-
-    box.Add(client, 3, wx.EXPAND)
-
-    frame.SetSizer(box)
-
-    frame.Center()
+    frame = MainFrame(self, get_all_buddy_summaries(self.conn, user_id))
     frame.Show()
     return True
 
@@ -80,8 +55,7 @@ class Lumos(wx.App):
     """ Converts old *****.chatlog file to *****.chatlog/*****.xml format,
         removes .DS_Store fields """
     print '''Backing up your logs...''' + self.path
-    return
-
+    return # todo re-allow
 
     try:
       copytree(self.path, self.path+'.bk')
