@@ -2,3 +2,5 @@ db/*
 .*.swp
 *.pyc
 incendio/bin-debug/*
+lumos/build
+lumos/dist

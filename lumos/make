@@ -1,0 +1,3 @@
+py2applet --make-setup --includes='BeautifulSoup' --site-packages --iconfile='icon.jpg' lumos.py
+
+python setup.py py2app
