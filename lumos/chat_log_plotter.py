@@ -21,10 +21,20 @@ class ChatLogPlotter(plot.PlotCanvas):
     buddy_id = get_user_id(self.app.conn, buddy_sn)
 
     entries = get_cum_log_entries_for_user(self.app.conn, user_id, buddy_id, buddy_sn)
-    print '%d chats under %s' % (len(entries), buddy_sn)
+    data = [(e.start_time, e.size) for e in entries]
+    '''print '%d chats under %s' % (len(entries), buddy_sn)
     for e in entries:
-      print e.to_string()
+      print e.to_string()''' # todo: find a way to have a 'debug' option!
 
-    '''line = plot.PolyLine(data, legend='blue', colour='red', width=1)
+    line = plot.PolyLine(data, legend='blue', colour='red', width=1)
     gc = plot.PlotGraphics([line], 'Line', 'X axiss', 'Y axis')
-    self.Draw(gc, xAxis=(0, 8), yAxis=(0, 15))'''
+    min_x, max_x = self.get_min_max_for_axis('x', data)
+    min_y, max_y = self.get_min_max_for_axis('y', data)
+    self.Draw(gc, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
+
+  def get_min_max_for_axis(self, axis, data):
+    idx = 0 if axis == 'x' else 1
+    axis_data = [elt[idx] for elt in data]
+    return [min(axis_data), max(axis_data)]
+
+

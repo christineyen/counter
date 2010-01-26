@@ -11,7 +11,7 @@ import wx
 
 class Lumos(wx.App):
   ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']]
-  CURRENT_ACCT = ACCTS[1]
+  CURRENT_ACCT = ACCTS[0]
   path = os.path.join('/Users', 'cyen', 'Library', 'Application Support', 'Adium 2.0', 'Users', 'Default', 'LogsBackup', '.'.join(CURRENT_ACCT))
   db_path = os.path.join('/Users', 'cyen', 'Library', 'Preferences', 'lumos', 'Local Store', 'db', '.'.join(CURRENT_ACCT)+'.db')
   acct_logs = os.listdir(path)

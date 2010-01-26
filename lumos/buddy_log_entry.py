@@ -93,5 +93,11 @@ class BuddyLogEntry(object):
   def msgs_total(self):
     return self.msgs_user + self.msgs_buddy
 
+  def pretty_start_time(self):
+    return datetime.fromtimestamp(self.start_time)
+
+  def pretty_end_time(self):
+    return datetime.fromtimestamp(self.end_time)
+
   def to_string(self):
     return '%s: %d bytes on %s\n' % (self.buddy_sn, self.size, datetime.fromtimestamp(self.start_time).ctime())
