@@ -1,3 +1,4 @@
+from wx import Color
 import wx.lib.plot as plot
 from buddy_log_entry import *
 
@@ -20,14 +21,15 @@ class ChatLogPlotter(plot.PlotCanvas):
       buddy_id = get_user_id(self.app.conn, buddy_sn)
       entries = get_cum_log_entries_for_user(self.app.conn, user_id, buddy_id, buddy_sn)
       data = [(e.start_time, e.size) for e in entries]
-      '''print '%d chats under %s' % (len(entries), buddy_sn)
-      for e in entries:
-        print e.to_string()''' # todo: find a way to have a 'debug' option!
+      if self.app.debug:
+        print '%d chats under %s' % (len(entries), buddy_sn)
+        for e in entries:
+          print e.to_string()
+        print data
       if len(data) > 0 and len(data) <= 2:
         data.insert(0, (data[0][0], 0))
         #data.insert(len(data), data[-1][1])
-      print str(data)
-      line = plot.PolyLine(data, legend=buddy_sn, colour='red', width=1)
+      line = plot.PolyLine(data, legend=buddy_sn, colour=self.color_for_sn(buddy_sn), width=4)
       line_list.append(line)
       all_coords.extend(data)
 
@@ -53,4 +55,6 @@ class ChatLogPlotter(plot.PlotCanvas):
     axis_data = [elt[idx] for elt in data]
     return [min(axis_data), max(axis_data)]
 
-
+  def color_for_sn(self, buddy_sn):
+    hsh = hash(buddy_sn)
+    return Color(hsh % 256, hsh / 256 % 256, hsh / 256 / 256 % 256)

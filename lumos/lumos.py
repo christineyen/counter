@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import sys
 from os.path import split, getsize, join, isfile
 from shutil import copytree, rmtree
 import datetime
@@ -15,6 +16,10 @@ class Lumos(wx.App):
   path = os.path.join('/Users', 'cyen', 'Library', 'Application Support', 'Adium 2.0', 'Users', 'Default', 'LogsBackup', '.'.join(CURRENT_ACCT))
   db_path = os.path.join('/Users', 'cyen', 'Library', 'Preferences', 'lumos', 'Local Store', 'db', '.'.join(CURRENT_ACCT)+'.db')
   acct_logs = os.listdir(path)
+
+  def __init__(self, redirect, debug):
+    wx.App.__init__(self, redirect)
+    self.debug = debug
 
   def OnInit(self):
     self.conn = self.one_time_setup()
@@ -97,5 +102,6 @@ class Lumos(wx.App):
           create_buddy_log_entry(conn, self.CURRENT_ACCT[-1], username, join(root, name))
 
 if __name__ == '__main__':
-  l = Lumos(redirect=False)
+  debug_val = ('-d' in sys.argv)
+  l = Lumos(redirect=False, debug=debug_val)
   l.MainLoop()
