@@ -26,15 +26,23 @@ class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnS
     self.SortListItems(0)
     self.setResizeColumn(1)
     # events
-    self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColClick)
-    self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+    self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_focused)
+    self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_item_focused)
     
-  def OnItemSelected(self, event):
+  def on_item_focused(self, event):
     self.currentItem = event.m_itemIndex
-    self.plotter.update(self.GetItemText(self.currentItem))
+    indices = self.get_selected_indices()
+    buddy_sns = [self.GetItemText(e) for e in indices]
+    self.plotter.update(buddy_sns)
 
-  def OnColClick(self, event):
-    event.Skip()
+  def get_selected_indices(self):
+    idx = -1
+    arr = []
+    while True:
+      idx = self.GetNextSelected(idx)
+      if idx == -1: break
+      arr.append(idx)
+    return arr
 
   def GetListCtrl(self):
     return self
