@@ -9,7 +9,7 @@ class MainFrame(wx.Frame):
 
     self.CreateStatusBar()
     self.tbicon = JpgIcon(self)
-    self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+    self.Bind(wx.EVT_CLOSE, self.on_close_window)
 
     box = wx.BoxSizer(wx.HORIZONTAL)
     plotter = ChatLogPlotter(self, app)
@@ -24,6 +24,6 @@ class MainFrame(wx.Frame):
 
     self.Center()
 
-  def OnCloseWindow(self, evt):
+  def on_close_window(self, evt):
     self.tbicon.Destroy()
     evt.Skip()

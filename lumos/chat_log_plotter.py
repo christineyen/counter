@@ -13,7 +13,7 @@ class ChatLogPlotter(plot.PlotCanvas):
     if len(buddy_sn_list) == 0: return self.draw_blank()
 
     # todo: also decide how we feel about the view looking stuff up in the db
-    user_id = 1 # todo: figure out whether to pass this in or just set it as some const somewhere
+    user_id = get_user_id(self.app.conn, self.app.CURRENT_ACCT[-1]) # todo: figure out whether to pass this in or just set it as some const somewhere
 
     line_list = []
     all_coords = []

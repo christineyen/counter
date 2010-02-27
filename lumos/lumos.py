@@ -11,18 +11,18 @@ from buddy_summary import *
 import wx
 
 class Lumos(wx.App):
-  ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com'], ['GTalk', 'temp']]
-  CURRENT_ACCT = ACCTS[0]
+  ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'], ['GTalk','christineyen@gmail.com']]
+  CURRENT_ACCT = ACCTS[1]
   path = os.path.join('/Users', 'cyen', 'Library', 'Application Support', 'Adium 2.0', 'Users', 'Default', 'LogsBackup', '.'.join(CURRENT_ACCT))
   db_path = os.path.join('/Users', 'cyen', 'Library', 'Preferences', 'lumos', 'Local Store', 'db', '.'.join(CURRENT_ACCT)+'.db')
   acct_logs = os.listdir(path)
 
   def __init__(self, redirect, debug):
+    self.conn = self.one_time_setup()
     wx.App.__init__(self, redirect)
     self.debug = debug
 
   def OnInit(self):
-    self.conn = self.one_time_setup()
     user_id = get_user_id(self.conn, self.CURRENT_ACCT[-1])
 
     frame = MainFrame(self, get_all_buddy_summaries(self.conn, user_id))
@@ -45,7 +45,7 @@ class Lumos(wx.App):
     self.convert_new_format() # todo: EARLY RETURN! find a way to check need for this
     self.update_from_logs(conn)
     return conn
- 
+
   def setup_db(self, conn):
     conn.executescript('''create table if not exists users
       (id integer primary key, screenname text);''')
@@ -60,7 +60,7 @@ class Lumos(wx.App):
     """ Converts old *****.chatlog file to *****.chatlog/*****.xml format,
         removes .DS_Store fields """
     print '''Backing up your logs...''' + self.path
-    return # todo re-allow
+    return false # todo re-allow
 
     try:
       copytree(self.path, self.path+'.bk')
