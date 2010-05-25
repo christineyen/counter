@@ -14,23 +14,57 @@ from util import get_user_id
 import time
 from datetime import datetime
 
-def get_cum_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
+def get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn):
   """Gets the full list of log entries for a given user - each BuddyLogEntry in the list
      represents an individual conversation"""
-  cur = conn.cursor()
-  cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?', (user_id, buddy_id))
-  cumulative = {'size': 0, 'msgs_buddy': 0, 'msgs_user': 0}
-  all_convs = []
-  for row in cur:
-    cumulative['size'] += row['size']
-    cumulative['msgs_buddy'] += row['msgs_buddy']
-    cumulative['msgs_user'] += row['msgs_user']
+  list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
 
-    all_convs.append(BuddyLogEntry(user_id, buddy_sn, buddy_id, cumulative['size'], row['initiated'],
-      cumulative['msgs_user'], cumulative['msgs_buddy'], row['start_time'], row['end_time'], None))
+  cumu_size = 0
+  cumu_msgs_buddy = 0
+  cumu_msgs_user = 0
+  all_convs = []
+  for entry in list:
+    cumu_size += entry['size']
+    cumu_msgs_user += entry['msgs_user']
+    cumu_msgs_buddy += entry['msgs_buddy']
+    all_convs.append(BuddyLogEntry(user_id, buddy_sn, buddy_id,
+      cumu_size, entry['initiated'], cumu_msgs_user, cumu_msgs_buddy,
+      entry['start_time'], entry['end_time'], None))
   return all_convs
 
-def get_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
+
+def get_all_logs_for_user(conn, user_id, buddy_id, buddy_sn):
+  list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
+
+  all_convs = []
+  for entry in list:
+    all_convs.append(BuddyLogEntry(user_id, buddy_sn, buddy_id,
+      entry['size'], entry['initiated'], entry['msgs_user'], entry['msgs_buddy'],
+      entry['start_time'], entry['end_time'], None))
+  return all_convs
+
+
+def fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
+  """Gets the full list of log entries for a given user - each BuddyLogEntry in the list
+     represents an individual conversation.
+
+     Returns a list of dictionaries, for easy wrapping."""
+  cur = conn.cursor()
+  cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?', (user_id, buddy_id))
+  all_convs = []
+  for row in cur:
+    entry = { 'size' : row['size'],
+              'msgs_buddy' : row['msgs_buddy'],
+              'msgs_user' : row['msgs_user'],
+              'initiated' : row['initiated'],
+              'start_time' : row['start_time'],
+              'end_time' : row['end_time']
+            }
+    all_convs.append(entry)
+  return all_convs
+
+
+def deprecated_get_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
   """not actually used anywhere, deprecated in favor of get_cumu_for_user"""
   cur = conn.cursor()
   cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?', (user_id, buddy_id))

@@ -1,6 +1,7 @@
 import wx
 from buddy_list import BuddyListCtrl
 from chat_log_plotter import ChatLogPlotter
+from display_options import DisplayOptions
 from jpg_icon import JpgIcon
 
 class MainFrame(wx.Frame):
@@ -11,18 +12,25 @@ class MainFrame(wx.Frame):
     self.tbicon = JpgIcon(self)
     self.Bind(wx.EVT_CLOSE, self.on_close_window)
 
-    box = wx.BoxSizer(wx.HORIZONTAL)
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
     plotter = ChatLogPlotter(self, app)
     # list nonsense
+    vbox = wx.BoxSizer(wx.VERTICAL)
     data = [(bs.buddy_sn, bs.size, bs.start_time.ctime()) for bs in all_data]
     lst = BuddyListCtrl(self, data, plotter)
-    box.Add(lst, 2, wx.EXPAND | wx.ALL, 3)
+    vbox.Add(lst, 14, wx.EXPAND | wx.ALL, 1)
 
-    box.Add(plotter, 3, wx.EXPAND)
+    options = DisplayOptions(self, plotter)
 
-    self.SetSizer(box)
+    vbox.Add(options, 1, wx.EXPAND)
 
-    self.Center()
+    hbox.Add(vbox, 2, wx.EXPAND | wx.ALL, 2)
+
+    hbox.Add(plotter, 3, wx.EXPAND)
+
+    self.SetSizer(hbox)
+
+    self.Center
 
   def on_close_window(self, evt):
     self.tbicon.Destroy()

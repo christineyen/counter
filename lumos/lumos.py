@@ -4,7 +4,7 @@ import sys
 from os.path import split, getsize, join, isfile
 from shutil import copytree, rmtree
 import datetime
-from main_frame import MainFrame
+from view.main_frame import MainFrame
 from buddy_log_entry import *
 from buddy_summary import *
 

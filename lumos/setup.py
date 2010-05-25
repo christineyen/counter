@@ -5,6 +5,9 @@ Usage:
     python setup.py py2app
 """
 
+import ez_setup
+ez_setup.use_setuptools()
+
 from setuptools import setup
 
 APP = ['lumos.py']
@@ -12,7 +15,8 @@ DATA_FILES = []
 OPTIONS = {'argv_emulation': True,
  'iconfile': 'icon.jpg',
  'includes': 'BeautifulSoup',
- 'site_packages': True}
+ 'site_packages': True,
+ 'plist' : 'Info.plist'}
 
 setup(
     app=APP,
