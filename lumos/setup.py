@@ -13,10 +13,10 @@ from setuptools import setup
 APP = ['lumos.py']
 DATA_FILES = []
 OPTIONS = {'argv_emulation': True,
- 'iconfile': 'icon.jpg',
- 'includes': 'BeautifulSoup',
- 'site_packages': True,
- 'plist' : 'Info.plist'}
+    'iconfile': 'icon.jpg',
+    'includes': 'BeautifulSoup',
+    'site_packages': True,
+    'plist' : 'Info.plist'}
 
 setup(
     app=APP,

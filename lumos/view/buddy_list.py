@@ -1,66 +1,67 @@
 import wx
 import wx.lib.mixins.listctrl as listmix
 
-class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin, listmix.ColumnSorterMixin):
-  
-  def __init__(self, parent, data_source, plotter):
-    wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_VIRTUAL)
+class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
+                    listmix.ColumnSorterMixin):
 
-    self.plotter = plotter
+    def __init__(self, parent, data_source, plotter):
+        wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_VIRTUAL)
 
-    item_data_map = {}
-    for idx, item in enumerate(data_source):
-      item_data_map[idx] = item
-    self.itemDataMap = item_data_map
-    self.itemIndexMap = item_data_map.keys()
-    self.SetItemCount(len(data_source))
+        self.plotter = plotter
 
-    self.InsertColumn(0, 'Buddy SN')
-    self.InsertColumn(1, 'Size')
-    self.InsertColumn(2, 'Last Conversation Date')
-    self.SetColumnWidth(2, 120)
+        item_data_map = {}
+        for idx, item in enumerate(data_source):
+            item_data_map[idx] = item
+        self.itemDataMap = item_data_map
+        self.itemIndexMap = item_data_map.keys()
+        self.SetItemCount(len(data_source))
 
-    listmix.ListCtrlAutoWidthMixin.__init__(self)
-    listmix.ColumnSorterMixin.__init__(self, 3)
+        self.InsertColumn(0, 'Buddy SN')
+        self.InsertColumn(1, 'Size')
+        self.InsertColumn(2, 'Last Conversation Date')
+        self.SetColumnWidth(2, 120)
 
-    self.SortListItems(0)
-    self.setResizeColumn(1)
-    # events
-    self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_focused)
-    self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_item_focused)
-    
-  def on_item_focused(self, event):
-    self.currentItem = event.m_itemIndex
-    indices = self.get_selected_indices()
-    buddy_sns = [self.GetItemText(e) for e in indices]
-    self.plotter.update(buddy_sns)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
+        listmix.ColumnSorterMixin.__init__(self, 3)
 
-  def get_selected_indices(self):
-    idx = -1
-    arr = []
-    while True:
-      idx = self.GetNextSelected(idx)
-      if idx == -1: break
-      arr.append(idx)
-    return arr
+        self.SortListItems(0)
+        self.setResizeColumn(1)
+        # events
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_focused)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_item_focused)
 
-  def GetListCtrl(self):
-    return self
+    def on_item_focused(self, event):
+        self.currentItem = event.m_itemIndex
+        indices = self.get_selected_indices()
+        buddy_sns = [self.GetItemText(e) for e in indices]
+        self.plotter.update(buddy_sns)
 
-  def OnGetItemText(self, item, col):
-    index = self.itemIndexMap[item]
-    item = self.itemDataMap[index][col]
-    if type(item) == int:
-      return str(item)
-    return item
+    def get_selected_indices(self):
+        idx = -1
+        arr = []
+        while True:
+            idx = self.GetNextSelected(idx)
+            if idx == -1: break
+            arr.append(idx)
+        return arr
 
-  def OnGetItemAttr(self, item):  return None
-  def OnGetItemImage(self, item): return -1
+    def GetListCtrl(self):
+        return self
 
-  def SortItems(self, sorter=cmp):
-    items = list(self.itemDataMap.keys())
+    def OnGetItemText(self, item, col):
+        index = self.itemIndexMap[item]
+        item = self.itemDataMap[index][col]
+        if type(item) == int:
+            return str(item)
+        return item
 
-    items.sort(sorter)
-    self.itemIndexMap = items
+    def OnGetItemAttr(self, item):  return None
+    def OnGetItemImage(self, item): return -1
 
-    self.Refresh()
+    def SortItems(self, sorter=cmp):
+        items = list(self.itemDataMap.keys())
+
+        items.sort(sorter)
+        self.itemIndexMap = items
+
+        self.Refresh()

@@ -15,123 +15,116 @@ import time
 from datetime import datetime
 
 def get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn):
-  """Gets the full list of log entries for a given user - each BuddyLogEntry in the list
-     represents an individual conversation"""
-  list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
+    """Gets the full list of log entries for a given user - each BuddyLogEntry
+     in the list represents an individual conversation"""
+    list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
 
-  cumu_size = 0
-  cumu_msgs_buddy = 0
-  cumu_msgs_user = 0
-  all_convs = []
-  for entry in list:
-    cumu_size += entry['size']
-    cumu_msgs_user += entry['msgs_user']
-    cumu_msgs_buddy += entry['msgs_buddy']
-    all_convs.append(BuddyLogEntry(user_id, buddy_sn, buddy_id,
-      cumu_size, entry['initiated'], cumu_msgs_user, cumu_msgs_buddy,
-      entry['start_time'], entry['end_time'], None))
-  return all_convs
+    cumu_size = 0
+    cumu_msgs_buddy = 0
+    cumu_msgs_user = 0
+    all_convs = []
+    for entry in list:
+        cumu_size += entry['size']
+        cumu_msgs_user += entry['msgs_user']
+        cumu_msgs_buddy += entry['msgs_buddy']
+        ble = BuddyLogEntry(user_id, buddy_sn, buddy_id,
+                            cumu_size, entry['initiated'], cumu_msgs_user,
+                            cumu_msgs_buddy, entry['start_time'],
+                            entry['end_time'], None)
+        all_convs.append(ble)
+    return all_convs
 
 
 def get_all_logs_for_user(conn, user_id, buddy_id, buddy_sn):
-  list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
+    list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
 
-  all_convs = []
-  for entry in list:
-    all_convs.append(BuddyLogEntry(user_id, buddy_sn, buddy_id,
-      entry['size'], entry['initiated'], entry['msgs_user'], entry['msgs_buddy'],
-      entry['start_time'], entry['end_time'], None))
-  return all_convs
+    all_convs = []
+    for entry in list:
+        ble = BuddyLogEntry(user_id, buddy_sn, buddy_id, entry['size'],
+                            entry['initiated'], entry['msgs_user'],
+                            entry['msgs_buddy'], entry['start_time'],
+                            entry['end_time'], None)
+        all_convs.append(ble)
+    return all_convs
 
 
 def fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
-  """Gets the full list of log entries for a given user - each BuddyLogEntry in the list
-     represents an individual conversation.
+    """Gets the full list of log entries for a given user - each BuddyLogEntry
+        in the list represents an individual conversation.
 
-     Returns a list of dictionaries, for easy wrapping."""
-  cur = conn.cursor()
-  cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?', (user_id, buddy_id))
-  all_convs = []
-  for row in cur:
-    entry = { 'size' : row['size'],
-              'msgs_buddy' : row['msgs_buddy'],
-              'msgs_user' : row['msgs_user'],
-              'initiated' : row['initiated'],
-              'start_time' : row['start_time'],
-              'end_time' : row['end_time']
-            }
-    all_convs.append(entry)
-  return all_convs
+        Returns a list of dictionaries, for easy wrapping."""
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?',
+                (user_id, buddy_id))
+    all_convs = []
+    for row in cur:
+        entry = { 'size'       : row['size'],
+                  'msgs_buddy' : row['msgs_buddy'],
+                  'msgs_user'  : row['msgs_user'],
+                  'initiated'  : row['initiated'],
+                  'start_time' : row['start_time'],
+                  'end_time'   : row['end_time']
+                }
+        all_convs.append(entry)
+    return all_convs
 
-
-def deprecated_get_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
-  """not actually used anywhere, deprecated in favor of get_cumu_for_user"""
-  cur = conn.cursor()
-  cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?', (user_id, buddy_id))
-  all_convs = []
-  for row in cur:
-    all_convs.append({
-      'buddy_sn': row['buddy_sn'],
-      'size': row['size'],
-      'initiated': row['initiated'],
-      'msgs_total': row['msgs_user'] + row['msgs_buddy'],
-      'msgs_user': row['msgs_user'],
-      'duration': row['end_time'] - row['start_time'],
-      'date': row['start_time']})
-
-  return all_convs
 
 def create_buddy_log_entry(conn, user_sn, buddy_sn, file_nm):
-  xml = BeautifulStoneSoup(open(file_nm, 'r'))
-  msgs = xml('message')
-  if len(msgs) == 0: return
+    xml = BeautifulStoneSoup(open(file_nm, 'r'))
+    msgs = xml('message')
+    if len(msgs) == 0: return
 
-  my_msgs = len(xml.findAll({'message': True}, {'sender': user_sn}))
-  their_msgs = len(msgs)-my_msgs
-  initiated = (msgs[0]['sender'] == user_sn)
-  start_time = parse(msgs[0]['time'].replace('.', ':'))
-  end_time = parse(msgs[-1]['time'].replace('.', ':'))
+    my_msgs = len(xml.findAll({'message': True}, {'sender': user_sn}))
+    their_msgs = len(msgs)-my_msgs
+    initiated = (msgs[0]['sender'] == user_sn)
+    start_time = parse(msgs[0]['time'].replace('.', ':'))
+    end_time = parse(msgs[-1]['time'].replace('.', ':'))
 
-  user_id = get_user_id(conn, user_sn)
-  buddy_id = get_user_id(conn, buddy_sn)
-  stats = stat(file_nm)
+    user_id = get_user_id(conn, user_sn)
+    buddy_id = get_user_id(conn, buddy_sn)
+    stats = stat(file_nm)
 
-  cur = conn.cursor()
-  try:
-    cur.execute('''INSERT INTO conversations (user_id, buddy_id,
-      size, initiated, msgs_user, msgs_buddy, start_time, end_time, timestamp, file_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-      (user_id, buddy_id, stats.st_size, initiated,
-      my_msgs, their_msgs, time.mktime(start_time.timetuple()), time.mktime(end_time.timetuple()),
-      time.time(), file_nm))
-    conn.commit()
-  except sqlite3.IntegrityError:
-    pass
+    cur = conn.cursor()
+    try:
+        cur.execute('''INSERT INTO conversations (user_id, buddy_id,
+                        size, initiated, msgs_user, msgs_buddy, start_time,
+                        end_time, timestamp, file_path) VALUES (?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?)''',
+                    (user_id, buddy_id, stats.st_size, initiated, my_msgs,
+                    their_msgs, time.mktime(start_time.timetuple()),
+                    time.mktime(end_time.timetuple()), time.time(), file_nm))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        pass
 
 class BuddyLogEntry(object):
-  """A simple object to represent a single chat log"""
-  def __init__(self, user_id=-1, buddy_sn='', buddy_id=-1, size=-1, initiated=1, msgs_user=0, msgs_buddy=0, start_time=None, end_time=None, timestamp=None):
-    self.user_id = user_id
-    self.buddy_sn = buddy_sn
-    self.buddy_id = buddy_id
-    self.size = size
-    self.initiated = initiated
-    self.msgs_user = msgs_user
-    self.msgs_buddy = msgs_buddy
-    self.start_time = start_time
-    self.end_time = end_time
-    self.timestamp = timestamp
+    """A simple object to represent a single chat log"""
+    def __init__(self, user_id=-1, buddy_sn='', buddy_id=-1, size=-1,
+                 initiated=1, msgs_user=0, msgs_buddy=0, start_time=None,
+                 end_time=None, timestamp=None):
+        self.user_id = user_id
+        self.buddy_sn = buddy_sn
+        self.buddy_id = buddy_id
+        self.size = size
+        self.initiated = initiated
+        self.msgs_user = msgs_user
+        self.msgs_buddy = msgs_buddy
+        self.start_time = start_time
+        self.end_time = end_time
+        self.timestamp = timestamp
 
-  def duration(self):
-    return self.end_time - self.start_time
+    def duration(self):
+        return self.end_time - self.start_time
 
-  def msgs_total(self):
-    return self.msgs_user + self.msgs_buddy
+    def msgs_total(self):
+        return self.msgs_user + self.msgs_buddy
 
-  def pretty_start_time(self):
-    return datetime.fromtimestamp(self.start_time)
+    def pretty_start_time(self):
+        return datetime.fromtimestamp(self.start_time)
 
-  def pretty_end_time(self):
-    return datetime.fromtimestamp(self.end_time)
+    def pretty_end_time(self):
+        return datetime.fromtimestamp(self.end_time)
 
-  def to_string(self):
-    return '%s: %d bytes on %s\n' % (self.buddy_sn, self.size, datetime.fromtimestamp(self.start_time).ctime())
+    def to_string(self):
+        return '%s: %d bytes on %s\n' % (self.buddy_sn, self.size,
+               datetime.fromtimestamp(self.start_time).ctime())
