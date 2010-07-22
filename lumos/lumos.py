@@ -42,7 +42,7 @@ class Lumos(wx.App):
 
         db_parent = os.path.dirname(self.db_path)
         if not os.path.exists(db_parent):
-            os.mkdirs(db_parent)
+            os.makedirs(db_parent)
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         self.setup_db(conn)
