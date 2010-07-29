@@ -4,16 +4,18 @@ import sys
 from os.path import split, getsize, join, isfile
 from shutil import copytree, rmtree
 import datetime
+import threading
+
+import wx
+
 from view.main_frame import MainFrame
 from buddy_log_entry import *
 from buddy_summary import *
 
-import wx
-
 class Lumos(wx.App):
     ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'],
              ['GTalk','christineyen@gmail.com']]
-    CURRENT_ACCT = ACCTS[1]
+    CURRENT_ACCT = ACCTS[0]
     path = os.path.join('/Users', 'cyen', 'Library', 'Application Support',
                         'Adium 2.0', 'Users', 'Default', 'LogsBackup',
                         '.'.join(CURRENT_ACCT))
@@ -22,32 +24,30 @@ class Lumos(wx.App):
     acct_logs = os.listdir(path)
 
     def __init__(self, redirect, debug):
-        self.conn = self.one_time_setup()
         wx.App.__init__(self, redirect)
         self.debug = debug
+        thread = threading.Thread(target=self.update_database)
+        thread.setDaemon(True)
+        thread.start()
 
+    # Initialization overriding wx.App's __init__ method
     def OnInit(self):
-        user_id = get_user_id(self.conn, self.CURRENT_ACCT[-1])
+        conn = self.get_connection()
+        user_id = get_user_id(conn, self.CURRENT_ACCT[-1])
 
-        frame = MainFrame(self, get_all_buddy_summaries(self.conn, user_id))
-        frame.Show()
+        self.frame = MainFrame(self, get_all_buddy_summaries(conn, user_id))
+        self.frame.Show()
+        conn.close()
         return True
 
-    def one_time_setup(self):
-        if os.path.exists(self.db_path):
-            conn = sqlite3.connect(self.db_path)
-            conn.row_factory = sqlite3.Row
-            self.update_from_logs(conn)
-            return conn
-
-        db_parent = os.path.dirname(self.db_path)
-        if not os.path.exists(db_parent):
-            os.makedirs(db_parent)
+    def get_connection(self):
+        if not os.path.exists(self.db_path):
+            db_parent = os.path.dirname(self.db_path)
+            if not os.path.exists(db_parent):
+                os.makedirs(db_parent)
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         self.setup_db(conn)
-        # todo: EARLY RETURN! find a way to check need for this
-        self.convert_new_format()
         self.update_from_logs(conn)
         return conn
 
@@ -63,11 +63,26 @@ class Lumos(wx.App):
         conn.executescript('''create unique index if not exists user_start_time
                            on conversations(buddy_id, start_time, end_time);''')
 
+    def on_db_updated(self):
+        print "UPDATED DATABASE!"
+        self.conn = self.get_connection()
+        user_id = get_user_id(self.conn, self.CURRENT_ACCT[-1])
+        self.frame.refresh_data(get_all_buddy_summaries(self.conn, user_id))
+        # evt.Skip()
+
+    def update_database(self):
+        # todo: EARLY RETURN! find a way to check need for this
+        conn = self.get_connection()
+        self.convert_new_format()
+        self.update_from_logs(conn)
+        conn.close()
+        wx.CallAfter(self.on_db_updated)
+
     def convert_new_format(self):
         """ Converts old *****.chatlog file to *****.chatlog/*****.xml format,
             removes .DS_Store fields """
         print '''Backing up your logs...''' + self.path
-        return false # todo re-allow
+        return False # todo re-allow
 
         try:
             copytree(self.path, self.path+'.bk')

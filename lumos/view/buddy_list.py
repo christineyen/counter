@@ -4,17 +4,13 @@ import wx.lib.mixins.listctrl as listmix
 class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
                     listmix.ColumnSorterMixin):
 
-    def __init__(self, parent, data_source, plotter):
-        wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_VIRTUAL)
+    def __init__(self, parent, plotter, pos=None, size=None):
+        wx.ListCtrl.__init__(self, parent, -1, pos=None, size=size,
+            style=wx.LC_REPORT|wx.LC_VIRTUAL)
 
         self.plotter = plotter
 
-        item_data_map = {}
-        for idx, item in enumerate(data_source):
-            item_data_map[idx] = item
-        self.itemDataMap = item_data_map
-        self.itemIndexMap = item_data_map.keys()
-        self.SetItemCount(len(data_source))
+        self.update_data([])
 
         self.InsertColumn(0, 'Buddy SN')
         self.InsertColumn(1, 'Size')
@@ -29,6 +25,15 @@ class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
         # events
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_focused)
         self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_item_focused)
+
+    def update_data(self, data):
+        item_data_map = {}
+        for idx, item in enumerate(data):
+            item_data_map[idx] = item
+        self.itemDataMap = item_data_map
+        self.itemIndexMap = item_data_map.keys()
+        self.SetItemCount(len(data))
+
 
     def on_item_focused(self, event):
         self.currentItem = event.m_itemIndex
