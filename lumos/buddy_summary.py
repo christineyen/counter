@@ -17,15 +17,18 @@ def get_all_buddy_summaries(conn, user_id):
     return all
 
 class BuddySummary(object):
-    def __init__(self, size=-1, ct=-1, initiated=0, buddy_id=-1, buddy_sn='',
-                 ts=0):
+    def __init__(self, size=-1, ct=-1, initiated=-1, buddy_id=-1, buddy_sn='',
+                 ts=None):
         self.size = size
         self.ct = ct
         self.initiated = initiated
         self.buddy_id = buddy_id
         self.buddy_sn = buddy_sn
         self.ts = ts
-        self.start_time = datetime.fromtimestamp(ts)
+        if ts:
+            self.start_time = datetime.fromtimestamp(ts)
+        else:
+            self.start_time = None
 
     def is_none(self):
         return (self.size < 0) and (self.ct < 0) and (self.initiated < 0) and \
