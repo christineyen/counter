@@ -10,18 +10,16 @@ import sqlite3
 from BeautifulSoup import BeautifulStoneSoup
 from dateutil.parser import parse
 from os import stat
-from util import get_user_id
+import util
 import time
 from datetime import datetime
 
+""" Gets the data (accumulated by time) of each conversation for a given
+    user. """
 def get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn):
-    """Gets the full list of log entries for a given user - each BuddyLogEntry
-     in the list represents an individual conversation"""
     list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
 
-    cumu_size = 0
-    cumu_msgs_buddy = 0
-    cumu_msgs_user = 0
+    cumu_size = cumu_msgs_buddy = cumu_msgs_user = 0
     all_convs = []
     for entry in list:
         cumu_size += entry['size']
@@ -35,6 +33,7 @@ def get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn):
     return all_convs
 
 
+""" Gets the raw data of each conversation for a given user """
 def get_all_logs_for_user(conn, user_id, buddy_id, buddy_sn):
     list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
 
@@ -48,11 +47,9 @@ def get_all_logs_for_user(conn, user_id, buddy_id, buddy_sn):
     return all_convs
 
 
+""" Fetches the full list of conversations for a user.
+    Returns a list of dictionaries, for easy wrapping."""
 def fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
-    """Gets the full list of log entries for a given user - each BuddyLogEntry
-        in the list represents an individual conversation.
-
-        Returns a list of dictionaries, for easy wrapping."""
     cur = conn.cursor()
     cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?',
                 (user_id, buddy_id))
@@ -69,7 +66,11 @@ def fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
     return all_convs
 
 
-def create_buddy_log_entry(conn, user_sn, buddy_sn, file_nm):
+""" Take a filename, parse the XML, and insert it into the database.
+    Stores most of the attributes raw, in order to do other sorts of
+    processing later.
+    """
+def create(conn, user_sn, buddy_sn, file_nm):
     xml = BeautifulStoneSoup(open(file_nm, 'r'))
     msgs = xml('message')
     if len(msgs) == 0: return
@@ -80,22 +81,27 @@ def create_buddy_log_entry(conn, user_sn, buddy_sn, file_nm):
     start_time = parse(msgs[0]['time'].replace('.', ':'))
     end_time = parse(msgs[-1]['time'].replace('.', ':'))
 
-    user_id = get_user_id(conn, user_sn)
-    buddy_id = get_user_id(conn, buddy_sn)
+    user_id = util.get_user_id(conn, user_sn)
+    buddy_id = util.get_user_id(conn, buddy_sn)
     stats = stat(file_nm)
 
     cur = conn.cursor()
     try:
-        cur.execute('''INSERT INTO conversations (user_id, buddy_id,
-                        size, initiated, msgs_user, msgs_buddy, start_time,
-                        end_time, timestamp, file_path) VALUES (?, ?, ?, ?, ?,
-                        ?, ?, ?, ?, ?)''',
+        cur.execute(CREATE_NEW_BUDDY_LOG_ENTRY_QUERY,
                     (user_id, buddy_id, stats.st_size, initiated, my_msgs,
                     their_msgs, time.mktime(start_time.timetuple()),
                     time.mktime(end_time.timetuple()), time.time(), file_nm))
         conn.commit()
     except sqlite3.IntegrityError:
         pass
+
+
+CREATE_NEW_BUDDY_LOG_ENTRY_QUERY = '''
+    INSERT INTO conversations (user_id, buddy_id,
+        size, initiated, msgs_user, msgs_buddy, start_time,
+        end_time, timestamp, file_path) VALUES (?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?) '''
+
 
 class BuddyLogEntry(object):
     """A simple object to represent a single chat log"""

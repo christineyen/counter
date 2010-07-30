@@ -9,8 +9,9 @@ import threading
 import wx
 
 from view.main_frame import MainFrame
-from buddy_log_entry import *
-from buddy_summary import *
+import buddy_log_entry
+import buddy_summary
+import util
 
 class Lumos(wx.App):
     ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'],
@@ -33,9 +34,9 @@ class Lumos(wx.App):
     # Initialization overriding wx.App's __init__ method
     def OnInit(self):
         conn = self.get_connection()
-        user_id = get_user_id(conn, self.CURRENT_ACCT[-1])
+        user_id = util.get_user_id(conn, self.CURRENT_ACCT[-1])
 
-        self.frame = MainFrame(self, get_all_buddy_summaries(conn, user_id))
+        self.frame = MainFrame(self, buddy_summary.get_all(conn, user_id))
         self.frame.Show()
         conn.close()
         return True
@@ -66,8 +67,8 @@ class Lumos(wx.App):
     def on_db_updated(self):
         print "UPDATED DATABASE!"
         self.conn = self.get_connection()
-        user_id = get_user_id(self.conn, self.CURRENT_ACCT[-1])
-        self.frame.refresh_data(get_all_buddy_summaries(self.conn, user_id))
+        user_id = util.get_user_id(self.conn, self.CURRENT_ACCT[-1])
+        self.frame.refresh_data(buddy_summary.get_all(self.conn, user_id))
         # evt.Skip()
 
     def update_database(self):
@@ -124,7 +125,7 @@ class Lumos(wx.App):
                     if name.find('.swp') > -1: continue
                     if last_file_ts >= os.stat(join(root, name)).st_mtime:
                         continue
-                    create_buddy_log_entry(conn, self.CURRENT_ACCT[-1],
+                    buddy_log_entry.create(conn, self.CURRENT_ACCT[-1],
                                            username, join(root, name))
 
 if __name__ == '__main__':

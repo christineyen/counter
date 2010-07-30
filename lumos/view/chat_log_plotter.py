@@ -1,6 +1,7 @@
 from wx import Color
 import wx.lib.plot as plot
-from buddy_log_entry import *
+import buddy_log_entry
+import util
 
 class ChatLogPlotter(plot.PlotCanvas):
 
@@ -18,17 +19,17 @@ class ChatLogPlotter(plot.PlotCanvas):
 
         # todo: decide how we feel about the view looking stuff up in the db
         # todo: figure out whether to pass this in or set as a const somewhere
-        user_id = get_user_id(self.app.conn, self.app.CURRENT_ACCT[-1])
+        user_id = util.get_user_id(self.app.conn, self.app.CURRENT_ACCT[-1])
         line_list = []
         all_coords = []
         for buddy_sn in buddy_sn_list:
-            buddy_id = get_user_id(self.app.conn, buddy_sn)
+            buddy_id = util.get_user_id(self.app.conn, buddy_sn)
             if self.cumulative:
-                entries = get_cumu_logs_for_user(self.app.conn, user_id,
-                                                 buddy_id, buddy_sn)
+                entries = buddy_log_entry.get_cumu_logs_for_user(
+                    self.app.conn, user_id, buddy_id, buddy_sn)
             else:
-                entries = get_all_logs_for_user(self.app.conn, user_id,
-                                                buddy_id, buddy_sn)
+                entries = buddy_log_entry.get_all_logs_for_user(
+                    self.app.conn, user_id, buddy_id, buddy_sn)
 
             data = [(e.start_time, e.size) for e in entries]
             if self.app.debug:
