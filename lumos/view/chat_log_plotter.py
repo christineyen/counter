@@ -19,7 +19,7 @@ class ChatLogPlotter(plot.PlotCanvas):
 
         # todo: decide how we feel about the view looking stuff up in the db
         # todo: figure out whether to pass this in or set as a const somewhere
-        user_id = util.get_user_id(self.app.conn, self.app.CURRENT_ACCT[-1])
+        user_id = util.get_user_id(self.app.conn, util.CURRENT_ACCT[-1])
         line_list = []
         all_coords = []
         for buddy_sn in buddy_sn_list:
