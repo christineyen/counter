@@ -25,5 +25,3 @@ v3:
 v4:
 - intelligent contacts matching (vashah@gmail.com vs vivekatmit)
 
-
-watch progress and see live tracker queue at: http://www.pivotaltracker.com/projects/23590
