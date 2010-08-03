@@ -7,13 +7,23 @@ class DisplayOptions(wx.BoxSizer):
         wx.BoxSizer.__init__(self, wx.HORIZONTAL)
         self.plotter = plotter
 
-        cumu = wx.RadioButton(parent, label='cumulative', pos=pos,
+        cumu_bytes = wx.RadioButton(parent, label='cumulative',
             style=wx.RB_GROUP)
-        cumu.SetValue(True)
-        iter = wx.RadioButton(parent, label='iterative',
-            pos=(pos[0] + 100, pos[1]))
-        self.Add(cumu, 1)
-        self.Add(iter, 1)
+        cumu_bytes.SetValue(True)
+        self.Add(cumu_bytes, 1)
+
+        # TODO(cyyen): consider replacing msgs with time length instead?
+        cumu_msgs = wx.RadioButton(parent, label='cumu msgs')
+        self.Add(cumu_msgs, 1)
+
+        init_pct = wx.RadioButton(parent, label="init pct")
+        self.Add(init_pct, 1)
+
+        iter_bytes = wx.RadioButton(parent, label='iterative')
+        self.Add(iter_bytes, 1)
+
+        iter_msgs = wx.RadioButton(parent, label="iter msgs")
+        self.Add(iter_msgs, 1)
 
         parent.Bind(wx.EVT_RADIOBUTTON, self.change_settings)
 

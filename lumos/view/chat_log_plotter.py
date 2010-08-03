@@ -19,7 +19,7 @@ class ChatLogPlotter(plot.PlotCanvas):
 
         # todo: decide how we feel about the view looking stuff up in the db
         # todo: figure out whether to pass this in or set as a const somewhere
-        user_id = util.get_user_id(self.app.conn, util.CURRENT_ACCT[-1])
+        user_id = util.get_user_id(self.app.conn, util.get_current_sn())
         line_list = []
         all_coords = []
         for buddy_sn in buddy_sn_list:
@@ -48,21 +48,23 @@ class ChatLogPlotter(plot.PlotCanvas):
         gc = plot.PlotGraphics(line_list, 'Line', 'X axiss', 'Y axis')
         min_x, max_x = self.get_min_max_for_axis('x', all_coords)
         min_y, max_y = self.get_min_max_for_axis('y', all_coords)
-        self.Draw(gc, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
+        self.Draw(gc)#, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
 
     def draw_blank(self):
         data = [(1,1), (4,2), (5, 2.5), (7, 4), (8, 7), (9, 20)]
         data2 = [(1, 3), (2, 1), (3, 2), (4, 2.5), (5, 1.5), (6, 2)]
-        line = plot.PolyLine(data, legend='christine', colour='midnight blue',
+        line = plot.PolyLine(data, colour='midnight blue',
                              width=1)
-        line2 = plot.PolyLine(data2, legend='world', colour='green', width=1)
+        line2 = plot.PolyLine(data2, colour='green', width=1)
         gc = plot.PlotGraphics([line, line2], 'examining awesomeness over time',
                                'Time (in eons)', 'awesomeness')
         self.SetEnableLegend(True)
         self.SetFontSizeLegend(10)
+        self.SetXSpec(type='none')
+        self.SetYSpec(type='none')
         min_x, max_x = self.get_min_max_for_axis('x', data)
         min_y, max_y = self.get_min_max_for_axis('y', data)
-        self.Draw(gc, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
+        self.Draw(gc)#, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
 
     def get_min_max_for_axis(self, axis, data):
         idx = 0 if axis == 'x' else 1

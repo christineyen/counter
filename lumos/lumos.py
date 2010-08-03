@@ -13,6 +13,7 @@ class Lumos(wx.App):
 
     def __init__(self, redirect, debug):
         wx.App.__init__(self, redirect)
+
         self.debug = debug
 
         thread = threading.Thread(target=util.update_database,
@@ -23,7 +24,7 @@ class Lumos(wx.App):
     # Initialization overriding wx.App's __init__ method
     def OnInit(self):
         conn = util.get_connection()
-        user_id = util.get_user_id(conn, util.CURRENT_ACCT[-1])
+        user_id = util.get_user_id(conn, util.get_current_sn())
 
         self.frame = MainFrame(self, buddy_summary.get_all(conn, user_id))
         self.frame.Show()
@@ -33,7 +34,7 @@ class Lumos(wx.App):
     def on_db_updated(self):
         print "UPDATED DATABASE!"
         self.conn = util.get_connection()
-        user_id = util.get_user_id(self.conn, util.CURRENT_ACCT[-1])
+        user_id = util.get_user_id(self.conn, util.get_current_sn())
         self.frame.refresh_data(buddy_summary.get_all(self.conn, user_id))
         # evt.Skip()
 

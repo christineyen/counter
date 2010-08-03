@@ -20,6 +20,16 @@ db_path = os.path.join('/Users', 'cyen', 'Library', 'Preferences', 'lumos',
                        'Local Store', 'db', '.'.join(CURRENT_ACCT)+'.db')
 acct_logs = os.listdir(path)
 
+# cfg strings and settings
+cfg = wx.Config('lumosconfig')
+CFG_current_sn = 'current_sn'
+
+def get_current_sn():
+    if not cfg.Exists(CFG_current_sn):
+        print "setting current_sn setting"
+        cfg.Write(CFG_current_sn, ACCTS[0][-1])
+    return cfg.Read(CFG_current_sn)
+
 def get_user_id(conn, screen_name):
     if screen_name in sns_to_ids: return sns_to_ids[screen_name]
 
@@ -112,5 +122,5 @@ def update_from_logs(conn):
                 if name.find('.swp') > -1: continue
                 if last_file_ts >= os.stat(join(root, name)).st_mtime:
                     continue
-                buddy_log_entry.create(conn, CURRENT_ACCT[-1],
+                buddy_log_entry.create(conn, get_current_sn(),
                                        username, join(root, name))
