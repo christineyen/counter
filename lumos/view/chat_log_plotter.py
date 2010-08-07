@@ -1,9 +1,8 @@
-from wx import Color
-import wx.lib.plot as plot
-import buddy_log_entry
-import util
-
 import wx
+import wx.lib.plot as plot
+
+import lumos.buddy_log_entry
+import lumos.util
 
 class ChatLogPlotter(wx.Panel):
 
@@ -29,16 +28,16 @@ class ChatLogPlotter(wx.Panel):
 
         # todo: decide how we feel about the view looking stuff up in the db
         # todo: figure out whether to pass this in or set as a const somewhere
-        user_id = util.get_user_id(self.app.conn, util.get_current_sn())
+        user_id = lumos.util.get_user_id(self.app.conn, lumos.util.get_current_sn())
         line_list = []
         all_coords = []
         for buddy_sn in buddy_sn_list:
-            buddy_id = util.get_user_id(self.app.conn, buddy_sn)
+            buddy_id = lumos.util.get_user_id(self.app.conn, buddy_sn)
             if self.cumulative:
-                entries = buddy_log_entry.get_cumu_logs_for_user(
+                entries = lumos.buddy_log_entry.get_cumu_logs_for_user(
                     self.app.conn, user_id, buddy_id, buddy_sn)
             else:
-                entries = buddy_log_entry.get_all_logs_for_user(
+                entries = lumos.buddy_log_entry.get_all_logs_for_user(
                     self.app.conn, user_id, buddy_id, buddy_sn)
 
             data = [(e.start_time, e.size) for e in entries]
@@ -83,7 +82,7 @@ class ChatLogPlotter(wx.Panel):
 
     def color_for_sn(self, buddy_sn):
         hsh = hash(buddy_sn)
-        return Color(hsh % 256, hsh / 256 % 256, hsh / 256 / 256 % 256)
+        return wx.Color(hsh % 256, hsh / 256 % 256, hsh / 256 / 256 % 256)
 
     def set_cumulative(self, boolean):
         self.cumulative = boolean

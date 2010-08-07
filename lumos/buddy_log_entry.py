@@ -6,13 +6,14 @@
 #  Copyright (c) 2010 Christine Yen. All rights reserved.
 #
 
-import sqlite3
 from BeautifulSoup import BeautifulStoneSoup
+from datetime import datetime
 from dateutil.parser import parse
 from os import stat
-import util
+import sqlite3
 import time
-from datetime import datetime
+
+import lumos.util
 
 """ Gets the data (accumulated by time) of each conversation for a given
     user. """
@@ -81,8 +82,8 @@ def create(conn, user_sn, buddy_sn, file_nm):
     start_time = parse(msgs[0]['time'].replace('.', ':'))
     end_time = parse(msgs[-1]['time'].replace('.', ':'))
 
-    user_id = util.get_user_id(conn, user_sn)
-    buddy_id = util.get_user_id(conn, buddy_sn)
+    user_id = lumos.util.get_user_id(conn, user_sn)
+    buddy_id = lumos.util.get_user_id(conn, buddy_sn)
     stats = stat(file_nm)
 
     cur = conn.cursor()

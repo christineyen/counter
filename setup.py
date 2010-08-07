@@ -10,16 +10,17 @@ ez_setup.use_setuptools()
 
 from setuptools import setup
 
-APP = ['lumos.py']
+APP = ['init.py']
 DATA_FILES = []
 OPTIONS = {'argv_emulation': True,
     'iconfile': 'icon.jpg',
     'includes': 'BeautifulSoup,numpy',
     'site_packages': True,
-    'plist' : 'Info.plist'}
+    'plist' : 'lumos/Info.plist'}
 
 setup(
     app=APP,
+    name="lumos",
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],

@@ -1,23 +1,24 @@
 """A utility module to fetch the appropriate chunks of data from sqlite"""
 
-import sqlite3
 import datetime
 import os
-from os.path import split, getsize, join, isfile
+from os.path import join
 from shutil import copytree, rmtree
+import sqlite3
 
 import wx
-import buddy_log_entry
+
+import lumos.buddy_log_entry
 
 sns_to_ids = {}
 ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'],
          ['GTalk','christineyen@gmail.com']]
 CURRENT_ACCT = ACCTS[0]
-path = os.path.join('/Users', 'cyen', 'Library', 'Application Support',
-                    'Adium 2.0', 'Users', 'Default', 'LogsBackup',
-                    '.'.join(CURRENT_ACCT))
-db_path = os.path.join('/Users', 'cyen', 'Library', 'Preferences', 'lumos',
-                       'Local Store', 'db', '.'.join(CURRENT_ACCT)+'.db')
+path = join('/Users', 'cyen', 'Library', 'Application Support',
+            'Adium 2.0', 'Users', 'Default', 'LogsBackup',
+            '.'.join(CURRENT_ACCT))
+db_path = join('/Users', 'cyen', 'Library', 'Preferences', 'lumos',
+               'Local Store', 'db', '.'.join(CURRENT_ACCT)+'.db')
 acct_logs = os.listdir(path)
 
 # cfg strings and settings
@@ -101,5 +102,5 @@ def update_from_logs(conn):
                 if name.find('.swp') > -1: continue
                 if last_file_ts >= os.stat(join(root, name)).st_mtime:
                     continue
-                buddy_log_entry.create(conn, get_current_sn(),
+                lumos.buddy_log_entry.create(conn, get_current_sn(),
                                        username, join(root, name))

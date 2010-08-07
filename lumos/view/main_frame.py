@@ -1,8 +1,9 @@
 import wx
-from buddy_list import BuddyListCtrl
-from chat_log_plotter import ChatLogPlotter
-from display_options import DisplayOptions
-from jpg_icon import JpgIcon
+
+from lumos.jpg_icon import JpgIcon
+from lumos.view.buddy_list import BuddyListCtrl
+from lumos.view.chat_log_plotter import ChatLogPlotter
+from lumos.view.display_options import DisplayOptions
 
 class MainFrame(wx.Frame):
     def __init__(self, app, all_data):
