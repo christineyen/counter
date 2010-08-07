@@ -14,7 +14,7 @@ APP = ['lumos.py']
 DATA_FILES = []
 OPTIONS = {'argv_emulation': True,
     'iconfile': 'icon.jpg',
-    'includes': 'BeautifulSoup',
+    'includes': 'BeautifulSoup,numpy',
     'site_packages': True,
     'plist' : 'Info.plist'}
 

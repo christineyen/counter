@@ -1,5 +1,4 @@
 """A utility module to fetch the appropriate chunks of data from sqlite"""
-# todo: kill this module, stick methods somewhere that makes more sense
 
 import sqlite3
 import datetime
@@ -13,7 +12,7 @@ import buddy_log_entry
 sns_to_ids = {}
 ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'],
          ['GTalk','christineyen@gmail.com']]
-CURRENT_ACCT = ACCTS[1]
+CURRENT_ACCT = ACCTS[0]
 path = os.path.join('/Users', 'cyen', 'Library', 'Application Support',
                     'Adium 2.0', 'Users', 'Default', 'LogsBackup',
                     '.'.join(CURRENT_ACCT))
@@ -72,36 +71,14 @@ def setup_db(conn):
 def update_database(callback):
     # todo: EARLY RETURN! find a way to check need for this
     conn = get_connection()
-    convert_new_format()
     update_from_logs(conn)
     conn.close()
     wx.CallAfter(callback)
 
-def convert_new_format():
-    """ Converts old *****.chatlog file to *****.chatlog/*****.xml format,
-        removes .DS_Store fields """
-    return False # todo re-allow
-
-    print '''Backing up your logs...''' + path
-
-    try:
-        copytree(path, path+'.bk')
-        print '''Converting chatlog structures...'''
-        for username in acct_logs:
-            if username == '.DS_Store': continue
-            for dir_entry in os.listdir(join(path, username)):
-                chatlog = join(path, username, dir_entry)
-                if dir_entry == '.DS_Store': os.remove(chatlog); continue
-                if isfile(chatlog):
-                    dir, fn = split(chatlog)
-                    os.rename(chatlog, chatlog+'2')
-                    os.renames(chatlog+'2',
-                               join(dir, fn, fn.rsplit('.',1)[0]+'.xml'))
-        rmtree(path+'.bk')
-    except OSError:
-        print 'Backup already exists. Did the process not finish last time?'
 
 def update_from_logs(conn):
+    """ Looks at the last processed conversation we have on this user, and
+        grabs any updated log files if needed. """
     for username in acct_logs:
         if username[0] == '.': continue
         cur = conn.cursor()

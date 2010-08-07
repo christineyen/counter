@@ -1,9 +1,11 @@
 import unittest
 
 import buddy_summary_test
+import buddy_log_entry_test
 
-buddy_summary_suite = buddy_summary_test.suite()
 
 suite = unittest.TestSuite()
-suite.addTest(buddy_summary_suite)
+suite.addTest(unittest.makeSuite(buddy_summary_test.TestBuddySummary))
+suite.addTest(unittest.makeSuite(buddy_log_entry_test.TestBuddyLogEntry))
+
 unittest.TextTestRunner(verbosity=2).run(suite)

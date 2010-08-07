@@ -16,11 +16,3 @@ class TestBuddySummary(unittest.TestCase):
         self.assertTrue(self.empty_summary.is_none())
         self.assertFalse(self.summary.is_none())
 
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestBuddySummary))
-    return suite
-
-if __name__ == '__main__':
-    unittest.main()

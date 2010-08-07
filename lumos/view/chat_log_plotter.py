@@ -3,12 +3,22 @@ import wx.lib.plot as plot
 import buddy_log_entry
 import util
 
-class ChatLogPlotter(plot.PlotCanvas):
+import wx
+
+class ChatLogPlotter(wx.Panel):
 
     def __init__(self, parent, application):
+        wx.Panel.__init__(self, parent)
         self.app = application
-        # graphing nonsense - ordinarily would be instantiated with nothing
-        plot.PlotCanvas.__init__(self, parent)
+
+        self.plotter = plot.PlotCanvas(self)
+        self.plotter.SetInitialSize(size=(400, 300))
+
+        # don't ask me why the single element needs a sizer
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self.plotter, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+
         self.draw_blank()
         self.cumulative = True
         self.current_buddy_sn_list = []
@@ -48,7 +58,7 @@ class ChatLogPlotter(plot.PlotCanvas):
         gc = plot.PlotGraphics(line_list, 'Line', 'X axiss', 'Y axis')
         min_x, max_x = self.get_min_max_for_axis('x', all_coords)
         min_y, max_y = self.get_min_max_for_axis('y', all_coords)
-        self.Draw(gc)#, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
+        self.plotter.Draw(gc)#, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
 
     def draw_blank(self):
         data = [(1,1), (4,2), (5, 2.5), (7, 4), (8, 7), (9, 20)]
@@ -58,13 +68,13 @@ class ChatLogPlotter(plot.PlotCanvas):
         line2 = plot.PolyLine(data2, colour='green', width=1)
         gc = plot.PlotGraphics([line, line2], 'examining awesomeness over time',
                                'Time (in eons)', 'awesomeness')
-        self.SetEnableLegend(True)
-        self.SetFontSizeLegend(10)
-        self.SetXSpec(type='none')
-        self.SetYSpec(type='none')
+        self.plotter.SetEnableLegend(True)
+        self.plotter.SetFontSizeLegend(10)
+        self.plotter.SetXSpec(type='none')
+        self.plotter.SetYSpec(type='none')
         min_x, max_x = self.get_min_max_for_axis('x', data)
         min_y, max_y = self.get_min_max_for_axis('y', data)
-        self.Draw(gc)#, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
+        self.plotter.Draw(gc)#, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
 
     def get_min_max_for_axis(self, axis, data):
         idx = 0 if axis == 'x' else 1

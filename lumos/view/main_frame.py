@@ -16,11 +16,10 @@ class MainFrame(wx.Frame):
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.plotter = ChatLogPlotter(self, self.app)
+        right_box, self.plotter = self.setup_right_side()
+
         self.lst = BuddyListCtrl(self, self.plotter, size=(300, 450))
         self.load_data(all_data)
-
-        right_box = self.setup_right_side(self.plotter)
 
         hbox.Add(self.lst, 2, wx.EXPAND | wx.ALL, 2)
         hbox.Add(right_box, 3, wx.EXPAND)
@@ -30,14 +29,22 @@ class MainFrame(wx.Frame):
         self.Center
 
 
-    def setup_right_side(self, plotter):
+    def setup_right_side(self):
         right_box = wx.BoxSizer(wx.VERTICAL)
+
+        # Here we create a panel and a notebook on the panel
+        nb = wx.Notebook(self)
+
+        plotter = ChatLogPlotter(nb, self.app)
+        nb.AddPage(plotter, "Plotter")
+        nb.AddPage(wx.Panel(nb), "empty panel")
+
         options = DisplayOptions(self, plotter, pos=(0, 460))
 
-        right_box.Add(plotter, 14, wx.EXPAND | wx.ALL, 1)
+        right_box.Add(nb, 14, wx.EXPAND | wx.ALL, 1)
         right_box.Add(options, 1, wx.EXPAND)
 
-        return right_box
+        return right_box, plotter
 
 
     def refresh_data(self, all_data):
