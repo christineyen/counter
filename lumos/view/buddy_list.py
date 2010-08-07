@@ -1,14 +1,14 @@
 import wx
 import wx.lib.mixins.listctrl as listmix
 
+import lumos.events
+
 class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
                     listmix.ColumnSorterMixin):
 
-    def __init__(self, parent, plotter, pos=None, size=None):
+    def __init__(self, parent, pos=None, size=None):
         wx.ListCtrl.__init__(self, parent, -1, pos=None, size=size,
             style=wx.LC_REPORT|wx.LC_VIRTUAL)
-
-        self.plotter = plotter
 
         self.update_data([])
 
@@ -39,7 +39,8 @@ class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
         self.currentItem = event.m_itemIndex
         indices = self.get_selected_indices()
         buddy_sns = [self.GetItemText(e) for e in indices]
-        self.plotter.update(buddy_sns)
+        wx.PostEvent(self.GetParent(),
+            lumos.events.ListItemFocusedEvent(self.GetId(), event, buddy_sns))
 
     def get_selected_indices(self):
         idx = -1

@@ -2,10 +2,7 @@ import unittest, sys, os
 
 from datetime import timedelta
 
-# update sys path to include bundled modules with priority
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from buddy_log_entry import BuddyLogEntry
+from lumos.buddy_log_entry import BuddyLogEntry
 
 USER_ID = 1
 START_TIME = 12345
@@ -23,7 +20,7 @@ class TestBuddyLogEntry(unittest.TestCase):
 
     def test_expected_values(self):
         self.assertEqual(END_TIME - START_TIME, self.entry.duration())
-        self.assertEqual(MSGS_USER + MSGS_BUDDY, self.entry.msgs_total())
+        self.assertEqual(MSGS_USER + MSGS_BUDDY, self.entry.msg_ct())
 
         delta = self.entry.pretty_end_time() - self.entry.pretty_start_time()
         expected_seconds = END_TIME - START_TIME

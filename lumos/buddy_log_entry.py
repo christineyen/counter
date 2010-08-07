@@ -123,7 +123,7 @@ class BuddyLogEntry(object):
     def duration(self):
         return self.end_time - self.start_time
 
-    def msgs_total(self):
+    def msg_ct(self):
         return self.msgs_user + self.msgs_buddy
 
     def pretty_start_time(self):

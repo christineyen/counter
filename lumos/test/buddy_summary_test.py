@@ -1,9 +1,6 @@
 import unittest, sys, os
 
-# update sys path to include bundled modules with priority
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from buddy_summary import BuddySummary
+from lumos.buddy_summary import BuddySummary
 
 class TestBuddySummary(unittest.TestCase):
 

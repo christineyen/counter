@@ -1,8 +1,9 @@
 import wx
 
+from lumos.events import EVT_LIST_ITEM_FOCUSED
 from lumos.jpg_icon import JpgIcon
 from lumos.view.buddy_list import BuddyListCtrl
-from lumos.view.chat_log_plotter import ChatLogPlotter
+from lumos.view.quantity_plotter import QuantityPlotter
 from lumos.view.display_options import DisplayOptions
 
 class MainFrame(wx.Frame):
@@ -17,46 +18,46 @@ class MainFrame(wx.Frame):
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
-        right_box, self.plotter = self.setup_right_side()
-
-        self.lst = BuddyListCtrl(self, self.plotter, size=(300, 450))
+        self.lst = BuddyListCtrl(self, size=(300, 450))
         self.load_data(all_data)
-
         hbox.Add(self.lst, 2, wx.EXPAND | wx.ALL, 2)
+
+        right_box, self.plotter = self.setup_right_side()
         hbox.Add(right_box, 3, wx.EXPAND)
 
         self.SetSizer(hbox)
 
         self.Center
 
+        # BuddyList events
+        self.Bind(EVT_LIST_ITEM_FOCUSED, self.on_item_focused)
+
 
     def setup_right_side(self):
-        right_box = wx.BoxSizer(wx.VERTICAL)
-
-        # Here we create a panel and a notebook on the panel
+        # Here we create the notebook and set up Panels as pages
         nb = wx.Notebook(self)
+        plotter = QuantityPlotter(nb, self.app)
 
-        plotter = ChatLogPlotter(nb, self.app)
-        nb.AddPage(plotter, "Plotter")
-        nb.AddPage(wx.Panel(nb), "empty panel")
+        nb.AddPage(plotter, "Quantity")
+        nb.AddPage(wx.Panel(nb), "Time")
+        nb.AddPage(wx.Panel(nb), "Skew")
 
-        options = DisplayOptions(self, plotter, pos=(0, 460))
-
-        right_box.Add(nb, 14, wx.EXPAND | wx.ALL, 1)
-        right_box.Add(options, 1, wx.EXPAND)
-
-        return right_box, plotter
+        return nb, plotter
 
 
     def refresh_data(self, all_data):
         print "refresh data"
-        # print "setting plotter to: " + str(self.plotter)
         self.load_data(all_data)
 
     def load_data(self, all_data):
         data = [(bs.buddy_sn, bs.size, bs.start_time.ctime())
                 for bs in all_data]
         self.lst.update_data(data)
+
+    def on_item_focused(self, evt):
+        print "== main frame sees: event " + str(evt.__class__) + \
+            ", " + str(evt.buddy_sns)
+        self.plotter.update(evt.buddy_sns)
 
     def on_close_window(self, evt):
         self.tbicon.Destroy()
