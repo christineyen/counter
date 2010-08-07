@@ -8,11 +8,12 @@ from os.path import split, getsize, join, isfile
 from shutil import copytree, rmtree
 
 import wx
+import buddy_log_entry
 
 sns_to_ids = {}
 ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'],
          ['GTalk','christineyen@gmail.com']]
-CURRENT_ACCT = ACCTS[0]
+CURRENT_ACCT = ACCTS[1]
 path = os.path.join('/Users', 'cyen', 'Library', 'Application Support',
                     'Adium 2.0', 'Users', 'Default', 'LogsBackup',
                     '.'.join(CURRENT_ACCT))
@@ -79,8 +80,9 @@ def update_database(callback):
 def convert_new_format():
     """ Converts old *****.chatlog file to *****.chatlog/*****.xml format,
         removes .DS_Store fields """
-    print '''Backing up your logs...''' + path
     return False # todo re-allow
+
+    print '''Backing up your logs...''' + path
 
     try:
         copytree(path, path+'.bk')
