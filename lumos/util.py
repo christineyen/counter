@@ -13,7 +13,7 @@ import lumos.buddy_log_entry
 sns_to_ids = {}
 ACCTS = [['AIM', 'cyenatwork'], ['AIM', 'thensheburns'],
          ['GTalk','christineyen@gmail.com']]
-CURRENT_ACCT = ACCTS[0]
+CURRENT_ACCT = ACCTS[1]
 path = join('/Users', 'cyen', 'Library', 'Application Support',
             'Adium 2.0', 'Users', 'Default', 'LogsBackup',
             '.'.join(CURRENT_ACCT))

@@ -1,5 +1,7 @@
+from datetime import datetime
+from matplotlib import dates
+
 import wx
-import wx.lib.plot as plot
 
 import lumos.events
 import lumos.view.plotter
@@ -24,7 +26,7 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
         options = QuantityOptions(self, pos=(0, 460))
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.plotter, 14, wx.EXPAND)
+        self.sizer.Add(self.canvas, 14, wx.EXPAND)
         self.sizer.Add(options, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
@@ -39,48 +41,44 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
         # todo: consider moving some of this elsewhere, triggered by events
         all_entries = self.fetch_log_entries_by_buddy(buddy_sn_list)
 
-        line_list = []
-        all_coords = []
+        self.figure.clear()
+        self.figure.gca().clear()
         for buddy_entry_list in all_entries:
             if len(buddy_entry_list) == 0: continue
             buddy_sn = buddy_entry_list[0].buddy_sn
 
-            data = self.data_by_type(buddy_entry_list)
+            x, y = self.data_by_type(buddy_entry_list)
 
             if self.app.debug:
-                print '%d chats under %s' % (len(buddy_entry_list), buddy_sn)
-                for e in buddy_entry_list:
-                    print e.to_string()
-                print data
+                print '%d chats w/ %s' % (len(buddy_entry_list), buddy_sn)
+                print 'x: ' + str(x)
+                print 'y: ' + str(y)
 
-            if len(data) > 0 and len(data) <= 2:
-                data.insert(0, (data[0][0], 0))
-                #data.insert(len(data), data[-1][1])
-            line = plot.PolyLine(data, legend=buddy_sn,
-                                 colour=self.color_for_sn(buddy_sn), width=4)
-            line_list.append(line)
-            all_coords.extend(data)
+            self.figure.gca().plot_date(dates.date2num(x), y, linestyle='-',
+                marker='o', color=self.color_for_sn(buddy_sn))
+        self.figure.legend(self.figure.gca().get_lines(), buddy_sn_list,
+            'upper left', prop={'size': 'small'})
 
-        gc = plot.PlotGraphics(line_list, 'Line', 'X axiss', 'Y axis')
-        min_x, max_x = self.get_min_max_for_axis('x', all_coords)
-        min_y, max_y = self.get_min_max_for_axis('y', all_coords)
-
-        self.label.SetLabel('')
-        self.plotter.Enable()
-        self.plotter.Draw(gc)#, xAxis=(min_x, max_x), yAxis=(min_y, max_y))
+        self.figure.canvas.draw()
 
     def data_by_type(self, buddy_entry_list):
-        data = []
+        x = []
+        y = []
 
-        if self.view_type == QuantityPlotter.BYTES:
-            data = [(e.start_time, e.size) for e in buddy_entry_list]
-        elif self.view_type == QuantityPlotter.MSGS:
-            data = [(e.start_time, e.msg_ct()) for e in buddy_entry_list]
-        elif self.view_type == QuantityPlotter.CONVERSATIONS:
-            for i, e in enumerate(buddy_entry_list):
-                data.append((e.start_time, i))
+        for i, e in enumerate(buddy_entry_list):
+            x.append(datetime.fromtimestamp(e.start_time))
+            if self.view_type == QuantityPlotter.BYTES:
+                y.append(e.size)
+            elif self.view_type == QuantityPlotter.MSGS:
+                y.append(e.msg_ct())
+            elif self.view_type == QuantityPlotter.CONVERSATIONS:
+                y.append(i)
 
-        return data
+        # add a point to connect it to the x axis
+        x.insert(0, x[0])
+        y.insert(0, 0)
+
+        return x, y
 
 
     def on_settings_change(self, event):

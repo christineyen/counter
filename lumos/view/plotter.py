@@ -1,5 +1,11 @@
+import matplotlib
+matplotlib.use('WxAgg')
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+
+# set matplotlib rc settings
+matplotlib.rc('font', size=10.0)
+
 import wx
-import wx.lib.plot as plot
 
 import lumos.buddy_log_entry
 import lumos.util
@@ -10,12 +16,9 @@ class Plotter(wx.Panel):
         wx.Panel.__init__(self, parent)
         self.app = application
 
-        self.plotter = plot.PlotCanvas(self)
-        self.label = wx.StaticText(self.plotter, label='', pos=(20,100))
-
-        '''self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.plotter, 1, wx.EXPAND)
-        self.SetSizer(self.sizer)'''
+        self.figure = matplotlib.figure.Figure(dpi=None, figsize=(2,2))
+        self.figure.set_facecolor('white')
+        self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
 
         self.draw_blank()
         self.current_buddy_sn_list = []
@@ -32,11 +35,11 @@ class Plotter(wx.Panel):
 
         return all_entries
 
+    def update(self, buddy_list): pass # abstract. MAIN CLASS
 
     def draw_blank(self):
-        self.plotter.Disable()
-        self.label.SetLabel(DRAW_BLANK_TEXT)
-        self.label.Wrap(400)
+        self.figure.clear()
+        self.figure.text(0.05, 0.375, DRAW_BLANK_TEXT, fontsize=11, color='#333333')
 
     def get_min_max_for_axis(self, axis, data):
         idx = 0 if axis == 'x' else 1
@@ -45,6 +48,10 @@ class Plotter(wx.Panel):
 
     def color_for_sn(self, buddy_sn):
         hsh = hash(buddy_sn)
-        return wx.Color(hsh % 256, hsh / 256 % 256, hsh / 256 / 256 % 256)
+        def norm(num):
+            return num / 256.0
+        return norm(hsh % 256), norm(hsh / 256 % 256), norm(hsh / 256 / 256 % 256)
 
-DRAW_BLANK_TEXT= ''' You have not selected any conversations to graph. Please click on one or more buddy screen names on the left to see results graphed in this space. '''
+DRAW_BLANK_TEXT= '''You have not selected any conversations to graph.\n
+Please click on one or more buddy screen names on the left\n
+to see results graphed in this space. '''
