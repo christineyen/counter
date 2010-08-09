@@ -5,7 +5,7 @@ def get_all(conn, user_id):
     cur.execute(GET_BUDDIES_SUMMARIES_QUERY, (user_id,))
     all = []
     for row in cur:
-        initiated = row['initiated'] - (row['ct'] / 2) # todo - CHECK this?
+        initiated = row['initiated'] - row['ct']
         all.append(BuddySummary(row['sz'], row['ct'], initiated, row['bid'],
                                 row['sn'], row['ts']))
     return all

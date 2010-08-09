@@ -26,10 +26,11 @@ cfg = wx.Config('lumosconfig')
 CFG_current_sn = 'current_sn'
 
 def get_current_sn():
-    if not cfg.Exists(CFG_current_sn):
+    '''if not cfg.Exists(CFG_current_sn):
         print "setting current_sn setting"
-        cfg.Write(CFG_current_sn, ACCTS[0][-1])
-    return cfg.Read(CFG_current_sn)
+        cfg.Write(CFG_current_sn, CURRENT_ACCT[-1])
+    return cfg.Read(CFG_current_sn)'''
+    return CURRENT_ACCT[-1]
 
 def get_user_id(conn, screen_name):
     if screen_name in sns_to_ids: return sns_to_ids[screen_name]

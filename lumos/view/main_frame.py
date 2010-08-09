@@ -3,6 +3,7 @@ import wx
 from lumos.events import EVT_LIST_ITEM_FOCUSED
 from lumos.jpg_icon import JpgIcon
 from lumos.view.buddy_list import BuddyListCtrl
+from lumos.view.skew_plotter import SkewPlotter
 from lumos.view.quantity_plotter import QuantityPlotter
 from lumos.view.display_options import DisplayOptions
 
@@ -22,8 +23,8 @@ class MainFrame(wx.Frame):
         self.load_data(all_data)
         hbox.Add(self.lst, 2, wx.EXPAND | wx.ALL, 2)
 
-        right_box, self.plotter = self.setup_right_side()
-        hbox.Add(right_box, 3, wx.EXPAND)
+        self.nb = self.setup_right_side()
+        hbox.Add(self.nb, 3, wx.EXPAND)
 
         self.SetSizer(hbox)
 
@@ -36,13 +37,14 @@ class MainFrame(wx.Frame):
     def setup_right_side(self):
         # Here we create the notebook and set up Panels as pages
         nb = wx.Notebook(self)
-        plotter = QuantityPlotter(nb, self.app)
+        quantity_plotter = QuantityPlotter(nb, self.app)
+        skew_plotter = SkewPlotter(nb, self.app)
 
-        nb.AddPage(plotter, "Quantity")
+        nb.AddPage(quantity_plotter, "Quantity")
         nb.AddPage(wx.Panel(nb), "Time")
-        nb.AddPage(wx.Panel(nb), "Skew")
+        nb.AddPage(skew_plotter, "Skew")
 
-        return nb, plotter
+        return nb
 
 
     def refresh_data(self, all_data):
@@ -50,14 +52,14 @@ class MainFrame(wx.Frame):
         self.load_data(all_data)
 
     def load_data(self, all_data):
-        data = [(bs.buddy_sn, bs.size, bs.start_time.ctime())
+        data = [(bs.buddy_sn, bs.ct, bs.start_time.ctime())
                 for bs in all_data]
         self.lst.update_data(data)
 
     def on_item_focused(self, evt):
         print "== main frame sees: event " + str(evt.__class__) + \
             ", " + str(evt.buddy_sns)
-        self.plotter.update(evt.buddy_sns)
+        self.nb.GetCurrentPage().update(evt.buddy_sns)
 
     def on_close_window(self, evt):
         self.tbicon.Destroy()

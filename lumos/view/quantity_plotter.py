@@ -18,6 +18,8 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
         'conversations': CONVERSATIONS
     }
 
+    FORMATTER = dates.DateFormatter('%m/%y')
+
     def __init__(self, parent, application):
         lumos.view.plotter.Plotter.__init__(self, parent, application)
 
@@ -33,39 +35,35 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
         self.Bind(lumos.events.EVT_QUANTITY_SETTINGS, self.on_settings_change)
 
 
-    def update(self, buddy_sn_list):
-        if len(buddy_sn_list) == 0: return self.draw_blank()
-        self.current_buddy_sn_list = buddy_sn_list
+    def draw(self, buddy_sns=[], ble_entries=[]):
+        ''' Draws a plot based on the size of conversations.
 
-        # todo: decide how we feel about the view looking stuff up in the db
-        # todo: consider moving some of this elsewhere, triggered by events
-        all_entries = self.fetch_log_entries_by_buddy(buddy_sn_list)
+            @param buddy_sns A list of strings representing buddy screen names.
+            @param ble_entries A list of lists per buddy of BuddyLogEntrys.
+            '''
+        axes = self.figure.gca()
+        for ble_list in ble_entries:
+            if len(ble_list) == 0: continue
+            buddy_sn = ble_list[0].buddy_sn
 
-        self.figure.clear()
-        self.figure.gca().clear()
-        for buddy_entry_list in all_entries:
-            if len(buddy_entry_list) == 0: continue
-            buddy_sn = buddy_entry_list[0].buddy_sn
+            x, y = self.data_by_type(ble_list)
 
-            x, y = self.data_by_type(buddy_entry_list)
-
-            if self.app.debug:
-                print '%d chats w/ %s' % (len(buddy_entry_list), buddy_sn)
-                print 'x: ' + str(x)
-                print 'y: ' + str(y)
-
-            self.figure.gca().plot_date(dates.date2num(x), y, linestyle='-',
-                marker='o', color=self.color_for_sn(buddy_sn))
-        self.figure.legend(self.figure.gca().get_lines(), buddy_sn_list,
-            'upper left', prop={'size': 'small'})
-
+            axes.plot_date(dates.date2num(x), y,
+                linestyle='-',
+                marker='o',
+                color=self.color_for_sn(buddy_sn))
+        axes.get_xaxis().set_major_formatter(QuantityPlotter.FORMATTER)
+        self.figure.legend(axes.get_lines(), buddy_sns, 'upper left',
+            prop={'size': 'small'})
         self.figure.canvas.draw()
 
-    def data_by_type(self, buddy_entry_list):
-        x = []
-        y = []
+    def data_by_type(self, ble_list):
+        ''' Returns lists  of x and y coordinates based on the current view_type.
 
-        for i, e in enumerate(buddy_entry_list):
+            @param ble_list A list of BuddyLogEntrys for a given user.
+            '''
+        x = []; y = []
+        for i, e in enumerate(ble_list):
             x.append(datetime.fromtimestamp(e.start_time))
             if self.view_type == QuantityPlotter.BYTES:
                 y.append(e.size)
@@ -78,8 +76,9 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
         x.insert(0, x[0])
         y.insert(0, 0)
 
-        return x, y
+        if self.app.debug: self.print_debug_info(ble_list, x, y)
 
+        return x, y
 
     def on_settings_change(self, event):
         self.view_type = event.view_type

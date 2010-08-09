@@ -13,7 +13,7 @@ class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
         self.update_data([])
 
         self.InsertColumn(0, 'Buddy SN')
-        self.InsertColumn(1, 'Size')
+        self.InsertColumn(1, '#')
         self.InsertColumn(2, 'Last Conversation Date')
         self.SetColumnWidth(2, 120)
 

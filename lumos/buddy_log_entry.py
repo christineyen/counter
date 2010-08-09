@@ -15,27 +15,29 @@ import time
 
 import lumos.util
 
-""" Gets the data (accumulated by time) of each conversation for a given
-    user. """
 def get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn):
+    """ Gets the data (accumulated by time) of each conversation for a given
+        user. The cumulative 'initiated' data is more positive the more the
+        buddy initiated, and more negative the more you initiated. """
     list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
 
-    cumu_size = cumu_msgs_buddy = cumu_msgs_user = 0
+    cumu_size = cumu_msgs_buddy = cumu_msgs_user = cumu_initiated = 0
     all_convs = []
     for entry in list:
         cumu_size += entry['size']
         cumu_msgs_user += entry['msgs_user']
         cumu_msgs_buddy += entry['msgs_buddy']
+        cumu_initiated += entry['initiated'] and -1 or 1
         ble = BuddyLogEntry(user_id, buddy_sn, buddy_id,
-                            cumu_size, entry['initiated'], cumu_msgs_user,
+                            cumu_size, cumu_initiated, cumu_msgs_user,
                             cumu_msgs_buddy, entry['start_time'],
                             entry['end_time'], None)
         all_convs.append(ble)
     return all_convs
 
 
-""" Gets the raw data of each conversation for a given user """
 def get_all_logs_for_user(conn, user_id, buddy_id, buddy_sn):
+    """ Gets the raw data of each conversation for a given user """
     list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
 
     all_convs = []
@@ -79,6 +81,7 @@ def create(conn, user_sn, buddy_sn, file_nm):
     my_msgs = len(xml.findAll({'message': True}, {'sender': user_sn}))
     their_msgs = len(msgs)-my_msgs
     initiated = (msgs[0]['sender'] == user_sn)
+
     start_time = parse(msgs[0]['time'].replace('.', ':'))
     end_time = parse(msgs[-1]['time'].replace('.', ':'))
 
@@ -133,5 +136,6 @@ class BuddyLogEntry(object):
         return datetime.fromtimestamp(self.end_time)
 
     def to_string(self):
-        return '%s: %d bytes on %s\n' % (self.buddy_sn, self.size,
-               datetime.fromtimestamp(self.start_time).ctime())
+        initiated_str = self.initiated and ', initiated' or ''
+        return '%s: %d bytes on %s%s\n' % (self.buddy_sn, self.size,
+               datetime.fromtimestamp(self.start_time).ctime(), initiated_str)

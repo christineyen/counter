@@ -23,11 +23,17 @@ class Plotter(wx.Panel):
         self.draw_blank()
         self.current_buddy_sn_list = []
 
-    def fetch_log_entries_by_buddy(self, buddy_sn_list):
+    def fetch_log_entries_by_buddy(self, buddy_sns):
+        ''' For each buddy_sn passed in via buddy_sns, return a list of
+            BuddyLogEntrys.
+
+            @param buddy_sns A list of strings representing buddy screen names.
+            @return a list of lists, holding individual BuddyLogEntrys.
+            '''
         user_id = lumos.util.get_user_id(self.app.conn, lumos.util.get_current_sn())
 
         all_entries = []
-        for buddy_sn in buddy_sn_list:
+        for buddy_sn in buddy_sns:
             buddy_id = lumos.util.get_user_id(self.app.conn, buddy_sn)
             entries = lumos.buddy_log_entry.get_cumu_logs_for_user(
                 self.app.conn, user_id, buddy_id, buddy_sn)
@@ -35,7 +41,26 @@ class Plotter(wx.Panel):
 
         return all_entries
 
-    def update(self, buddy_list): pass # abstract. MAIN CLASS
+    def update(self, buddy_sns):
+        ''' The general 'update' logic for a plotter. Subclasses override
+            draw() in order to provide unique behavior.
+
+            @param buddy_sns A list of strings representing buddy screen names.
+            '''
+        if len(buddy_sns) == 0: return self.draw_blank()
+        self.current_buddy_sn_list = buddy_sns
+
+        # todo: decide how we feel about the view looking stuff up in the db
+        # todo: consider moving some of this elsewhere, triggered by events
+        ble_entries = self.fetch_log_entries_by_buddy(buddy_sns)
+
+        self.figure.clear()
+        self.figure.gca().clear()
+        self.draw(buddy_sns=buddy_sns, ble_entries=ble_entries)
+
+    def draw(self, buddy_sns=[], ble_entries=[]):
+        ''' Override to define plotter-specific drawing behavior.'''
+        pass # abstract
 
     def draw_blank(self):
         self.figure.clear()
@@ -51,6 +76,11 @@ class Plotter(wx.Panel):
         def norm(num):
             return num / 256.0
         return norm(hsh % 256), norm(hsh / 256 % 256), norm(hsh / 256 / 256 % 256)
+
+    def print_debug_info(self, ble_list, x, y):
+        print '%d chats w/ %s' % (len(ble_list), ble_list[0].buddy_sn)
+        print 'x: ' + str(x)
+        print 'y: ' + str(y)
 
 DRAW_BLANK_TEXT= '''You have not selected any conversations to graph.\n
 Please click on one or more buddy screen names on the left\n
