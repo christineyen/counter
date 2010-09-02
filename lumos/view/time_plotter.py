@@ -33,7 +33,7 @@ class TimePlotter(lumos.view.plotter.Plotter):
         self.sizer.Add(options, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
 
-        self.Bind(lumos.events.EVT_QUANTITY_SETTINGS, self.on_settings_change)
+        self.Bind(lumos.events.EVT_TIME_SETTINGS, self.on_settings_change)
 
     def draw(self, buddy_sns=[], ble_entries=[]):
         ''' Draws a plot based on some time-related attribute...'''
@@ -80,8 +80,40 @@ class TimePlotter(lumos.view.plotter.Plotter):
     def draw_length(self, buddy_sns=[], ble_entries=[]):
         ''' Draws bars, representing the duration of the conversation, against
             time.
+
+            TODO(cyyen): make this less UGLY, please
         '''
-        pass
+        axes = self.figure.gca()
+        collections = []
+        for i, ble_list in enumerate(ble_entries):
+            left = []; heights = []; bottoms = []
+            for entry in ble_list:
+                start = datetime.fromtimestamp(entry.start_time)
+                end = datetime.fromtimestamp(entry.end_time)
+                top = int(end.strftime('%H%M'))
+                bottom = int(start.strftime('%H%M'))
+                if top < bottom: # if the conversation went past midnight
+                    left.append(start)
+                    heights.append(2400 - bottom)
+                    bottoms.append(bottom)
+
+                    left.append(start)
+                    heights.append(top)
+                    bottoms.append(0)
+                else:
+                    left.append(start)
+                    heights.append(top - bottom)
+                    bottoms.append(bottom)
+            bar = axes.bar(left, heights, bottom=bottoms,
+                color=self.color_for_sn(ble_list[0].buddy_sn),
+                align='center')
+            collections.append(bar)
+        axes.get_xaxis().set_major_formatter(lumos.view.plotter.FORMATTER)
+        axes.get_yaxis().set_major_formatter(LengthYFormatter())
+        axes.set_ybound(0, 2400)
+        self.figure.legend(collections, buddy_sns, 'upper left',
+            prop={'size': 'small'})
+        self.figure.canvas.draw()
 
     def on_settings_change(self, event):
         self.view_type = event.view_type
@@ -105,3 +137,9 @@ class TimeOfDayYFormatter(ticker.Formatter):
             6: 'Sun' }
         return int_to_day_of_week.get(int(y), '')
 
+class LengthYFormatter(ticker.Formatter):
+    def __call__(self, y, pos=0):
+        y_str = str(y).split('.')[0]
+        hour = y_str[0:2]
+        minute = y_str[2:len(y_str)]
+        return hour + ':' + minute

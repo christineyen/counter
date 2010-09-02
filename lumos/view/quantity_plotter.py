@@ -19,8 +19,6 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
         'conversations': CONVERSATIONS
     }
 
-    FORMATTER = dates.DateFormatter('%m/%y')
-
     def __init__(self, parent, application):
         lumos.view.plotter.Plotter.__init__(
             self, parent, application, "Quantity of logs accumulated over time")
@@ -51,7 +49,7 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
                 linestyle='-',
                 marker='o',
                 color=self.color_for_sn(ble_list[0].buddy_sn))
-        axes.get_xaxis().set_major_formatter(QuantityPlotter.FORMATTER)
+        axes.get_xaxis().set_major_formatter(lumos.view.plotter.FORMATTER)
         self.figure.legend(axes.get_lines(), buddy_sns, 'upper left',
             prop={'size': 'small'})
         self.figure.canvas.draw()

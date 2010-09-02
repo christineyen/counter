@@ -1,4 +1,5 @@
 import matplotlib
+from matplotlib import dates
 matplotlib.use('WxAgg')
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
 
@@ -13,6 +14,8 @@ import lumos.util
 DRAW_BLANK_TEXT= '''You have not selected any conversations to graph.\n
 Please click on one or more buddy screen names on the left\n
 to see results graphed in this space. '''
+
+FORMATTER = dates.DateFormatter('%m/%y')
 
 class Plotter(wx.Panel):
 
@@ -114,6 +117,7 @@ class Options(wx.Panel):
             raise "unknown or null view type passed in!"
 
         view_type = self.view_types.get(view_type)
+        print "Posting event of class: " + str(self.event_class)
         wx.PostEvent(self.GetParent(),
             self.event_class(self.GetId(), event, view_type))
 
