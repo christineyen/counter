@@ -23,7 +23,10 @@ class TimePlotter(lumos.view.plotter.Plotter):
         self.view_type = TimePlotter.TIME_OF_DAY
 
         # Consider factoring into skew_plotter
-        options = TimeOptions(self, pos=(0, 460))
+        options = lumos.view.plotter.Options(self,
+            label='view by:',
+            view_types=TimePlotter.VIEW_TYPES,
+            event_class=lumos.events.TimeSettingsEvent)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.canvas, 14, wx.EXPAND)
@@ -38,8 +41,6 @@ class TimePlotter(lumos.view.plotter.Plotter):
             self.draw_time_of_day(buddy_sns, ble_entries)
         elif self.view_type == TimePlotter.LENGTH:
             self.draw_length(buddy_sns, ble_entries)
-        else:
-            self.draw_blank("Invalid type of Time plot selected.")
 
     def draw_time_of_day(self, buddy_sns=[], ble_entries=[]):
         ''' Draws bubbles based on the # conversations per hour of day
@@ -76,12 +77,6 @@ class TimePlotter(lumos.view.plotter.Plotter):
             prop={'size': 'small'})
         self.figure.canvas.draw()
 
-    def time_of_day_x_formatter(self):
-        l
-
-    def time_of_day_y_formatter(self):
-        pass
-
     def draw_length(self, buddy_sns=[], ble_entries=[]):
         ''' Draws bars, representing the duration of the conversation, against
             time.
@@ -93,41 +88,6 @@ class TimePlotter(lumos.view.plotter.Plotter):
         print "TimePlotter.view_type is now: " + str(self.view_type)
         self.update(self.current_buddy_sn_list)
 
-
-# TODO: clean up by creating a generic Options class in plotter.py,
-# pass in dictionary or kwargs to define buttons / labels?
-class TimeOptions(wx.Panel):
-    def __init__(self, parent, pos=None):
-        """ TODO: gross, i wish these options didn't have to touch the plotter
-            directly"""
-        wx.Panel.__init__(self, parent)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        label = wx.StaticText(self, label='view by: ')
-        sizer.Add(label, 1)
-
-        type = 'time of day'
-        time_of_day = wx.RadioButton(self, label=type, style=wx.RB_GROUP)
-        time_of_day.SetValue(True)
-        sizer.Add(time_of_day, 1)
-
-        type = 'length'
-        length = wx.RadioButton(self, label=type)
-        sizer.Add(length, 1)
-
-        self.SetSizer(sizer)
-
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_options_settings_change)
-
-    def on_options_settings_change(self, event):
-        view_type = event.EventObject.GetLabel()
-
-        if view_type not in TimePlotter.VIEW_TYPES.keys():
-            raise "unknown or null view type passed in!"
-
-        view_type = TimePlotter.VIEW_TYPES.get(view_type)
-        wx.PostEvent(self.GetParent(),
-            lumos.events.TimeSettingsEvent(self.GetId(), event, view_type))
 
 class TimeOfDayXFormatter(ticker.Formatter):
     def __call__(self, x, pos=0):

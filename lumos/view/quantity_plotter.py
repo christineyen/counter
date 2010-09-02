@@ -25,9 +25,12 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
         lumos.view.plotter.Plotter.__init__(
             self, parent, application, "Quantity of logs accumulated over time")
 
-        self.view_type = QuantityPlotter.BYTES
+        self.view_type = QuantityPlotter.CONVERSATIONS
 
-        options = QuantityOptions(self, pos=(0, 460))
+        options = lumos.view.plotter.Options(self,
+            label='cumulative:',
+            view_types=QuantityPlotter.VIEW_TYPES,
+            event_class=lumos.events.QuantitySettingsEvent)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.canvas, 14, wx.EXPAND)
@@ -80,42 +83,4 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
         self.view_type = event.view_type
         print "QuantityPlotter.view_type is now: " + str(self.view_type)
         self.update(self.current_buddy_sn_list)
-
-
-class QuantityOptions(wx.Panel):
-    def __init__(self, parent, pos=None):
-        """ TODO: gross, i wish these options didn't have to touch the plotter
-            directly"""
-        wx.Panel.__init__(self, parent)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        label = wx.StaticText(self, label='cumulative: ')
-        sizer.Add(label, 1)
-
-        type = 'bytes'
-        bytes = wx.RadioButton(self, label=type, style=wx.RB_GROUP)
-        bytes.SetValue(True)
-        sizer.Add(bytes, 1)
-
-        type = 'msgs'
-        msgs = wx.RadioButton(self, label=type)
-        sizer.Add(msgs, 1)
-
-        type = 'conversations'
-        conversations = wx.RadioButton(self, label=type)
-        sizer.Add(conversations, 1)
-
-        self.SetSizer(sizer)
-
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_options_settings_change)
-
-    def on_options_settings_change(self, event):
-        view_type = event.EventObject.GetLabel()
-
-        if view_type not in QuantityPlotter.VIEW_TYPES.keys():
-            raise "unknown or null view type passed in!"
-
-        view_type = QuantityPlotter.VIEW_TYPES.get(view_type)
-        wx.PostEvent(self.GetParent(),
-            lumos.events.QuantitySettingsEvent(self.GetId(), event, view_type))
 

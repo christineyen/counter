@@ -84,3 +84,36 @@ class Plotter(wx.Panel):
         print '%d chats w/ %s' % (len(ble_list), ble_list[0].buddy_sn)
         print 'x: ' + str(x)
         print 'y: ' + str(y)
+
+class Options(wx.Panel):
+    def __init__(self, parent, label='', view_types={}, event_class=None):
+        wx.Panel.__init__(self, parent)
+        self.view_types = view_types
+        self.event_class = event_class
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        label_elt = wx.StaticText(self, label=label)
+        sizer.Add(label_elt, 1)
+
+        for i, view_text in enumerate(view_types):
+            if i == 0:
+                btn = wx.RadioButton(self, label=view_text, style=wx.RB_GROUP)
+                btn.SetValue(True)
+            else:
+                btn = wx.RadioButton(self, label=view_text)
+            sizer.Add(btn, 1)
+
+        self.SetSizer(sizer)
+
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_options_settings_change)
+
+    def on_options_settings_change(self, event):
+        view_type = event.EventObject.GetLabel()
+
+        if view_type not in self.view_types.keys():
+            raise "unknown or null view type passed in!"
+
+        view_type = self.view_types.get(view_type)
+        wx.PostEvent(self.GetParent(),
+            self.event_class(self.GetId(), event, view_type))
+
