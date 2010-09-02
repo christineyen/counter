@@ -12,22 +12,15 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
     MSGS = 1
     CONVERSATIONS = 2
 
-    # Used to map the label text to a ViewType.
-    VIEW_TYPES = {
-        'bytes': BYTES,
-        'msgs': MSGS,
-        'conversations': CONVERSATIONS
-    }
-
     def __init__(self, parent, application):
         lumos.view.plotter.Plotter.__init__(
             self, parent, application, "Quantity of logs accumulated over time")
 
-        self.view_type = QuantityPlotter.CONVERSATIONS
+        self.view_type = self.view_types().items()[0][1]
 
         options = lumos.view.plotter.Options(self,
             label='cumulative:',
-            view_types=QuantityPlotter.VIEW_TYPES,
+            view_types=self.view_types().keys(),
             event_class=lumos.events.QuantitySettingsEvent)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -77,8 +70,11 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
 
         return x, y
 
-    def on_settings_change(self, event):
-        self.view_type = event.view_type
-        print "QuantityPlotter.view_type is now: " + str(self.view_type)
-        self.update(self.current_buddy_sn_list)
+    def view_types(self):
+        ''' Used to map the label text to a ViewType. '''
+        return {
+            'bytes': QuantityPlotter.BYTES,
+            'msgs': QuantityPlotter.MSGS,
+            'conversations': QuantityPlotter.CONVERSATIONS
+        }
 

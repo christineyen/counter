@@ -11,21 +11,15 @@ class TimePlotter(lumos.view.plotter.Plotter):
     TIME_OF_DAY = 0
     LENGTH = 1
 
-    # Used to map the label text to a ViewType.
-    VIEW_TYPES = {
-        'time of day': TIME_OF_DAY,
-        'length': LENGTH
-    }
-
     def __init__(self, parent, application):
         lumos.view.plotter.Plotter.__init__(self, parent, application,
             "Properties of logs by time of day and duration")
-        self.view_type = TimePlotter.TIME_OF_DAY
+        self.view_type = self.view_types().items()[0][1]
 
         # Consider factoring into skew_plotter
         options = lumos.view.plotter.Options(self,
             label='view by:',
-            view_types=TimePlotter.VIEW_TYPES,
+            view_types=self.view_types().keys(),
             event_class=lumos.events.TimeSettingsEvent)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
@@ -115,10 +109,13 @@ class TimePlotter(lumos.view.plotter.Plotter):
             prop={'size': 'small'})
         self.figure.canvas.draw()
 
-    def on_settings_change(self, event):
-        self.view_type = event.view_type
-        print "TimePlotter.view_type is now: " + str(self.view_type)
-        self.update(self.current_buddy_sn_list)
+    def view_types(self):
+        ''' Used to map the label text to a ViewType. '''
+        return {
+            'time of day': TimePlotter.TIME_OF_DAY,
+            'length': TimePlotter.LENGTH
+        }
+
 
 
 class TimeOfDayXFormatter(ticker.Formatter):

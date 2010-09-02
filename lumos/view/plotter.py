@@ -83,27 +83,42 @@ class Plotter(wx.Panel):
             return num / 256.0
         return norm(hsh % 256), norm(hsh / 256 % 256), norm(hsh / 256 / 256 % 256)
 
+    def on_settings_change(self, event):
+        if event.view_type not in self.view_types().keys():
+            raise "unknown or null view type passed in!"
+
+        self.view_type = self.view_types()[event.view_type]
+        print self.__class__.__name__ + " is now: " + str(self.view_type)
+        self.update(self.current_buddy_sn_list)
+
+    def view_types(self):
+        pass # abstract
+
     def print_debug_info(self, ble_list, x, y):
         print '%d chats w/ %s' % (len(ble_list), ble_list[0].buddy_sn)
         print 'x: ' + str(x)
         print 'y: ' + str(y)
 
 class Options(wx.Panel):
-    def __init__(self, parent, label='', view_types={}, event_class=None):
+    def __init__(self, parent, label='', view_types=[], event_class=None):
+        ''' Return a generic Options panel, customizable based on the arguments.
+
+            @param view_types An (ordered!) list of labels showing all settings.
+            @param event_class The wx.EventType this class should post.
+        '''
         wx.Panel.__init__(self, parent)
-        self.view_types = view_types
         self.event_class = event_class
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         label_elt = wx.StaticText(self, label=label)
         sizer.Add(label_elt, 1)
 
-        for i, view_text in enumerate(view_types):
+        for i, view_type in enumerate(view_types):
             if i == 0:
-                btn = wx.RadioButton(self, label=view_text, style=wx.RB_GROUP)
+                btn = wx.RadioButton(self, label=view_type, style=wx.RB_GROUP)
                 btn.SetValue(True)
             else:
-                btn = wx.RadioButton(self, label=view_text)
+                btn = wx.RadioButton(self, label=view_type)
             sizer.Add(btn, 1)
 
         self.SetSizer(sizer)
@@ -113,10 +128,6 @@ class Options(wx.Panel):
     def on_options_settings_change(self, event):
         view_type = event.EventObject.GetLabel()
 
-        if view_type not in self.view_types.keys():
-            raise "unknown or null view type passed in!"
-
-        view_type = self.view_types.get(view_type)
         print "Posting event of class: " + str(self.event_class)
         wx.PostEvent(self.GetParent(),
             self.event_class(self.GetId(), event, view_type))
