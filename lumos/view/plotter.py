@@ -57,8 +57,7 @@ class Plotter(wx.Panel):
         if len(buddy_sns) == 0: return self.draw_blank()
         self.current_buddy_sn_list = buddy_sns
 
-        # todo: decide how we feel about the view looking stuff up in the db
-        # todo: consider moving some of this elsewhere, triggered by events
+        # TODO: decide how we feel about the view looking stuff up in the db
         ble_entries = self.fetch_log_entries_by_buddy(buddy_sns)
 
         self.figure.clear()

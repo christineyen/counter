@@ -33,6 +33,7 @@ class MainFrame(wx.Frame):
 
         # BuddyList events
         self.Bind(EVT_LIST_ITEM_FOCUSED, self.on_item_focused)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
 
     def setup_right_side(self):
@@ -62,6 +63,14 @@ class MainFrame(wx.Frame):
         print "== main frame sees: event " + str(evt.__class__) + \
             ", " + str(evt.buddy_sns)
         self.nb.GetCurrentPage().update(evt.buddy_sns)
+
+    def on_page_changed(self, evt):
+        print "== main frame sees: event " + str(evt.__class__)
+        # TODO: the correct way to pass the new page the selected buddy sns
+        #       would be to subclass wx.Notebook and stuff our own data inside
+        #       the wx.NOTEBOOK_PAGE_CHANGED event, the way we did with
+        #       ITEM_FOCUSED.
+        self.nb.GetCurrentPage().update(self.lst.get_selected_buddy_sns())
 
     def on_close_window(self, evt):
         self.tbicon.Destroy()

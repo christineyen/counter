@@ -34,11 +34,13 @@ class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
         self.itemIndexMap = item_data_map.keys()
         self.SetItemCount(len(data))
 
+    def get_selected_buddy_sns(self):
+        indices = self.get_selected_indices()
+        return [self.GetItemText(e) for e in indices]
 
     def on_item_focused(self, event):
         self.currentItem = event.m_itemIndex
-        indices = self.get_selected_indices()
-        buddy_sns = [self.GetItemText(e) for e in indices]
+        buddy_sns = self.get_selected_buddy_sns()
         wx.PostEvent(self.GetParent(),
             lumos.events.ListItemFocusedEvent(self.GetId(), event, buddy_sns))
 

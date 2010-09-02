@@ -75,7 +75,7 @@ class TimePlotter(lumos.view.plotter.Plotter):
         ''' Draws bars, representing the duration of the conversation, against
             time.
 
-            TODO(cyyen): make this less UGLY, please
+            TODO: make this less UGLY, please
         '''
         axes = self.figure.gca()
         collections = []
