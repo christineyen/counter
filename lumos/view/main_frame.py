@@ -3,8 +3,9 @@ import wx
 from lumos.events import EVT_LIST_ITEM_FOCUSED
 from lumos.jpg_icon import JpgIcon
 from lumos.view.buddy_list import BuddyListCtrl
-from lumos.view.skew_plotter import SkewPlotter
 from lumos.view.quantity_plotter import QuantityPlotter
+from lumos.view.skew_plotter import SkewPlotter
+from lumos.view.time_plotter import TimePlotter
 from lumos.view.display_options import DisplayOptions
 
 class MainFrame(wx.Frame):
@@ -38,10 +39,11 @@ class MainFrame(wx.Frame):
         # Here we create the notebook and set up Panels as pages
         nb = wx.Notebook(self)
         quantity_plotter = QuantityPlotter(nb, self.app)
+        time_plotter = TimePlotter(nb, self.app)
         skew_plotter = SkewPlotter(nb, self.app)
 
         nb.AddPage(quantity_plotter, "Quantity")
-        nb.AddPage(wx.Panel(nb), "Time")
+        nb.AddPage(time_plotter, "Time")
         nb.AddPage(skew_plotter, "Skew")
 
         return nb

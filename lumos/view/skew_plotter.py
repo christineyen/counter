@@ -5,7 +5,8 @@ import lumos.view.plotter
 class SkewPlotter(lumos.view.plotter.Plotter):
 
     def __init__(self, parent, application):
-        lumos.view.plotter.Plotter.__init__(self, parent, application)
+        lumos.view.plotter.Plotter.__init__(
+            self, parent, application, "Chat session initiator skew")
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.canvas, 1, wx.EXPAND)
         self.SetSizer(self.sizer)
@@ -23,10 +24,10 @@ class SkewPlotter(lumos.view.plotter.Plotter):
 
             # add_subplot(): num_buddies rows, 1 column, i+1'th plot
             ax = self.figure.add_subplot(num_buddies, 1, i+1)
-            y = self.data(ble_list)
+            x, y = self.data(ble_list)
 
             ax.set_title(buddy_sn)
-            ax.plot(y, linestyle='-',
+            ax.plot(x, y, linestyle='-',
                 marker='o', color=self.color_for_sn(buddy_sn))
 
         self.figure.canvas.draw()
@@ -35,6 +36,6 @@ class SkewPlotter(lumos.view.plotter.Plotter):
         y = [e.initiated for e in ble_list]
         y.insert(0, 0)
 
-        return y
+        return range(len(y)), y
 
 # OPTIONS: by initiation and by message count!

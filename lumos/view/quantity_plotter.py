@@ -12,6 +12,7 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
     MSGS = 1
     CONVERSATIONS = 2
 
+    # Used to map the label text to a ViewType.
     VIEW_TYPES = {
         'bytes': BYTES,
         'msgs': MSGS,
@@ -21,7 +22,8 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
     FORMATTER = dates.DateFormatter('%m/%y')
 
     def __init__(self, parent, application):
-        lumos.view.plotter.Plotter.__init__(self, parent, application)
+        lumos.view.plotter.Plotter.__init__(
+            self, parent, application, "Quantity of logs accumulated over time")
 
         self.view_type = QuantityPlotter.BYTES
 
@@ -36,22 +38,16 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
 
 
     def draw(self, buddy_sns=[], ble_entries=[]):
-        ''' Draws a plot based on the size of conversations.
-
-            @param buddy_sns A list of strings representing buddy screen names.
-            @param ble_entries A list of lists per buddy of BuddyLogEntrys.
-            '''
+        ''' Draws a plot based on the size of conversations. '''
         axes = self.figure.gca()
         for ble_list in ble_entries:
             if len(ble_list) == 0: continue
-            buddy_sn = ble_list[0].buddy_sn
-
             x, y = self.data_by_type(ble_list)
 
             axes.plot_date(dates.date2num(x), y,
                 linestyle='-',
                 marker='o',
-                color=self.color_for_sn(buddy_sn))
+                color=self.color_for_sn(ble_list[0].buddy_sn))
         axes.get_xaxis().set_major_formatter(QuantityPlotter.FORMATTER)
         self.figure.legend(axes.get_lines(), buddy_sns, 'upper left',
             prop={'size': 'small'})
@@ -82,7 +78,7 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
 
     def on_settings_change(self, event):
         self.view_type = event.view_type
-        print "self.view_type is now: " + str(self.view_type)
+        print "QuantityPlotter.view_type is now: " + str(self.view_type)
         self.update(self.current_buddy_sn_list)
 
 
@@ -111,9 +107,9 @@ class QuantityOptions(wx.Panel):
 
         self.SetSizer(sizer)
 
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_settings_change)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_options_settings_change)
 
-    def on_settings_change(self, event):
+    def on_options_settings_change(self, event):
         view_type = event.EventObject.GetLabel()
 
         if view_type not in QuantityPlotter.VIEW_TYPES.keys():

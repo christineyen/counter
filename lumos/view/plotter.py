@@ -10,9 +10,13 @@ import wx
 import lumos.buddy_log_entry
 import lumos.util
 
+DRAW_BLANK_TEXT= '''You have not selected any conversations to graph.\n
+Please click on one or more buddy screen names on the left\n
+to see results graphed in this space. '''
+
 class Plotter(wx.Panel):
 
-    def __init__(self, parent, application):
+    def __init__(self, parent, application, title):
         wx.Panel.__init__(self, parent)
         self.app = application
 
@@ -59,17 +63,16 @@ class Plotter(wx.Panel):
         self.draw(buddy_sns=buddy_sns, ble_entries=ble_entries)
 
     def draw(self, buddy_sns=[], ble_entries=[]):
-        ''' Override to define plotter-specific drawing behavior.'''
+        ''' Override to define plotter-specific drawing behavior.
+
+            @param buddy_sns A list of strings representing buddy screen names.
+            @param ble_entries A list of lists per buddy of BuddyLogEntrys.
+        '''
         pass # abstract
 
-    def draw_blank(self):
+    def draw_blank(self, text=DRAW_BLANK_TEXT):
         self.figure.clear()
-        self.figure.text(0.05, 0.375, DRAW_BLANK_TEXT, fontsize=11, color='#333333')
-
-    def get_min_max_for_axis(self, axis, data):
-        idx = 0 if axis == 'x' else 1
-        axis_data = [elt[idx] for elt in data]
-        return [min(axis_data), max(axis_data)]
+        self.figure.text(0.05, 0.375, text, fontsize=11, color='#333333')
 
     def color_for_sn(self, buddy_sn):
         hsh = hash(buddy_sn)
@@ -81,7 +84,3 @@ class Plotter(wx.Panel):
         print '%d chats w/ %s' % (len(ble_list), ble_list[0].buddy_sn)
         print 'x: ' + str(x)
         print 'y: ' + str(y)
-
-DRAW_BLANK_TEXT= '''You have not selected any conversations to graph.\n
-Please click on one or more buddy screen names on the left\n
-to see results graphed in this space. '''
