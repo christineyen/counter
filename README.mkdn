@@ -10,8 +10,8 @@ Inspired by Nalsoft [AIM Log Manager](http://www.nalsoft.com/?page=welcome), whi
 - - -
 Draft screenshots as of 09/02/2010. The 'quantity' screen (compare # bytes, msgs, or conversations logged), the 'time' screen (compare the duration / time interval, or the highest-represented hour/week for logged conversations), and the 'skew' screen (who initiates the conversation more often?):
 
-![quantity!](http://github.com/christineyen/counter/screenshots/raw/master/quantity.png)
+![quantity!](http://github.com/christineyen/counter/raw/master/screenshots/quantity.png)
 
-![time!](http://github.com/christineyen/counter/screenshots/raw/master/time.png)
+![time!](http://github.com/christineyen/counter/raw/master/screenshots/time.png)
 
-![skew!](http://github.com/christineyen/counter/screenshots/raw/master/skew.png)
+![skew!](http://github.com/christineyen/counter/raw/master/screenshots/skew.png)
