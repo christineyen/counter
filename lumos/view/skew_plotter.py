@@ -1,3 +1,5 @@
+from matplotlib.ticker import MaxNLocator
+
 import wx
 
 import lumos.view.plotter
@@ -18,6 +20,7 @@ class SkewPlotter(lumos.view.plotter.Plotter):
             @param ble_entries A list of lists per buddy of BuddyLogEntrys.
             '''
         num_buddies = len(ble_entries)
+        self.figure.clear()
         for i, ble_list in enumerate(ble_entries):
             if len(ble_list) == 0: continue
             buddy_sn = ble_list[0].buddy_sn
@@ -26,9 +29,12 @@ class SkewPlotter(lumos.view.plotter.Plotter):
             ax = self.figure.add_subplot(num_buddies, 1, i+1)
             x, y = self.data(ble_list)
 
-            ax.set_title(buddy_sn)
+            ax.set_title(buddy_sn, size='medium')
+            ax.axhline(color='black', alpha=0.75, linestyle=':')
+            ax.axhspan(min(y), 0, color='black', alpha=0.15)
             ax.plot(x, y, linestyle='-',
                 marker='o', color=self.color_for_sn(buddy_sn))
+            ax.locator_params(integer=True)
 
         self.figure.canvas.draw()
 
