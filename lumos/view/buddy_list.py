@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import wx
 import wx.lib.mixins.listctrl as listmix
 
@@ -10,18 +12,18 @@ class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
         wx.ListCtrl.__init__(self, parent, -1, pos=None, size=size,
             style=wx.LC_REPORT|wx.LC_VIRTUAL)
 
-        self.update_data([])
-
-        self.InsertColumn(0, 'Buddy SN')
-        self.InsertColumn(1, '#')
-        self.InsertColumn(2, 'Last Conversation Date')
-        self.SetColumnWidth(2, 120)
-
-        listmix.ListCtrlAutoWidthMixin.__init__(self)
+        # Un-comment out when we figure out why the horizontal scrollbar
+        # re-appears.
+        # listmix.ListCtrlAutoWidthMixin.__init__(self)
         listmix.ColumnSorterMixin.__init__(self, 3)
 
+        self.update_data([])
+
+        self.InsertColumn(0, 'Buddy SN', width=125)
+        self.InsertColumn(1, '#', width=30)
+        self.InsertColumn(2, 'Last Chat Date', width=120)
+
         self.SortListItems(0)
-        self.setResizeColumn(1)
         # events
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_focused)
         self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_item_focused)
@@ -61,6 +63,8 @@ class BuddyListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,
         item = self.itemDataMap[index][col]
         if type(item) == int:
             return str(item)
+        if type(item) == datetime:
+            return item.strftime('%m/%d/%y')
         return item
 
     def OnGetItemAttr(self, item):  return None

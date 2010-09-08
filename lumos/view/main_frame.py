@@ -23,14 +23,14 @@ class MainFrame(wx.Frame):
 
         self.lst = BuddyListCtrl(self, size=(300, 450))
         self.load_data(all_data)
-        hbox.Add(self.lst, 2, wx.EXPAND | wx.ALL, 2)
+        hbox.Add(self.lst, 2, wx.EXPAND | wx.ALL)
 
         self.nb = self.setup_right_side()
         hbox.Add(self.nb, 3, wx.EXPAND)
 
         self.SetSizer(hbox)
 
-        self.Center
+        self.Center()
 
         # BuddyList events
         self.Bind(EVT_LIST_ITEM_FOCUSED, self.on_item_focused)
@@ -57,9 +57,9 @@ class MainFrame(wx.Frame):
 
     def load_data(self, all_data):
         if len(all_data) == 0:
-            data = [('Data not yet loaded, or is empty', 0, 0)]
+            data = [('Loading...', 0, 0)]
         else:
-            data = [(bs.buddy_sn, bs.ct, bs.start_time.ctime())
+            data = [(bs.buddy_sn, bs.ct, bs.start_time)
                     for bs in all_data]
         self.lst.update_data(data)
 
