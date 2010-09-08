@@ -4,9 +4,9 @@ import lumos.view.plotter
 
 class SkewPlotter(lumos.view.plotter.Plotter):
 
-    def __init__(self, parent, application):
+    def __init__(self, parent):
         lumos.view.plotter.Plotter.__init__(
-            self, parent, application, "Chat session initiator skew")
+            self, parent, "Chat session initiator skew")
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer.Add(self.canvas, 1, wx.EXPAND)
         self.SetSizer(self.sizer)

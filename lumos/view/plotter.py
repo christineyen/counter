@@ -9,7 +9,6 @@ matplotlib.rc('font', size=10.0)
 import wx
 
 import lumos.buddy_log_entry
-import lumos.util
 
 DRAW_BLANK_TEXT= '''You have not selected any conversations to graph.\n
 Please click on one or more buddy screen names on the left\n
@@ -19,9 +18,8 @@ FORMATTER = dates.DateFormatter('%m/%y')
 
 class Plotter(wx.Panel):
 
-    def __init__(self, parent, application, title):
+    def __init__(self, parent, title):
         wx.Panel.__init__(self, parent)
-        self.app = application
 
         self.figure = matplotlib.figure.Figure(dpi=None, figsize=(2,2))
         self.figure.set_facecolor('white')
@@ -29,24 +27,6 @@ class Plotter(wx.Panel):
 
         self.draw_blank()
         self.current_buddy_sn_list = []
-
-    def fetch_log_entries_by_buddy(self, buddy_sns):
-        ''' For each buddy_sn passed in via buddy_sns, return a list of
-            BuddyLogEntrys.
-
-            @param buddy_sns A list of strings representing buddy screen names.
-            @return a list of lists, holding individual BuddyLogEntrys.
-            '''
-        user_id = lumos.util.get_user_id(self.app.conn, lumos.util.get_current_sn())
-
-        all_entries = []
-        for buddy_sn in buddy_sns:
-            buddy_id = lumos.util.get_user_id(self.app.conn, buddy_sn)
-            entries = lumos.buddy_log_entry.get_cumu_logs_for_user(
-                self.app.conn, user_id, buddy_id, buddy_sn)
-            all_entries.append(entries)
-
-        return all_entries
 
     def update(self, buddy_sns):
         ''' The general 'update' logic for a plotter. Subclasses override
@@ -58,7 +38,7 @@ class Plotter(wx.Panel):
         self.current_buddy_sn_list = buddy_sns
 
         # TODO: decide how we feel about the view looking stuff up in the db
-        ble_entries = self.fetch_log_entries_by_buddy(buddy_sns)
+        ble_entries = lumos.buddy_log_entry.get_all_cumu_logs_for(buddy_sns)
 
         self.figure.clear()
         self.figure.gca().clear()

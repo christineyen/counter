@@ -14,7 +14,8 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
 
     def __init__(self, parent, application):
         lumos.view.plotter.Plotter.__init__(
-            self, parent, application, "Quantity of logs accumulated over time")
+            self, parent, "Quantity of logs accumulated over time")
+        self.app = application
 
         self.view_type = self.view_types().items()[0][1]
 

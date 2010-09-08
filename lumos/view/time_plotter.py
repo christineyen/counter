@@ -11,8 +11,8 @@ class TimePlotter(lumos.view.plotter.Plotter):
     TIME_OF_DAY = 0
     LENGTH = 1
 
-    def __init__(self, parent, application):
-        lumos.view.plotter.Plotter.__init__(self, parent, application,
+    def __init__(self, parent):
+        lumos.view.plotter.Plotter.__init__(self, parent,
             "Properties of logs by time of day and duration")
         self.view_type = self.view_types().items()[0][1]
 

@@ -15,6 +15,29 @@ import time
 
 import lumos.util
 
+def get_all_cumu_logs_for(buddy_sns):
+    ''' For each buddy_sn passed in via buddy_sns, return a list of
+        BuddyLogEntrys.
+
+        @param buddy_sns A list of strings representing buddy screen names.
+        @return a list of lists, holding individual BuddyLogEntrys.
+        '''
+    # SUPER hacky - assumes the correct config exists and doesn't need
+    # to be checked / populated via dialog on the frame!
+    util = lumos.util.Util(None)
+    conn = util.get_connection()
+    user_id = util.get_user_id(util.get_current_sn())
+
+    all_entries = []
+    for buddy_sn in buddy_sns:
+        buddy_id = util.get_user_id(buddy_sn)
+        entries = lumos.buddy_log_entry.get_cumu_logs_for_user(
+            conn, user_id, buddy_id, buddy_sn)
+        all_entries.append(entries)
+
+    util.close_connection()
+    return all_entries
+
 def get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn):
     """ Gets the data (accumulated by time) of each conversation for a given
         user. The cumulative 'initiated' data is more positive the more the
@@ -73,7 +96,7 @@ def fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
     Stores most of the attributes raw, in order to do other sorts of
     processing later.
     """
-def create(conn, user_sn, buddy_sn, file_nm):
+def create(conn, user_sn, user_id, buddy_id, file_nm):
     xml = BeautifulStoneSoup(open(file_nm, 'r'))
     msgs = xml('message')
     if len(msgs) == 0: return
@@ -84,9 +107,6 @@ def create(conn, user_sn, buddy_sn, file_nm):
 
     start_time = parse(msgs[0]['time'].replace('.', ':'))
     end_time = parse(msgs[-1]['time'].replace('.', ':'))
-
-    user_id = lumos.util.get_user_id(conn, user_sn)
-    buddy_id = lumos.util.get_user_id(conn, buddy_sn)
     stats = stat(file_nm)
 
     cur = conn.cursor()

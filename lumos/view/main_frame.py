@@ -9,10 +9,11 @@ from lumos.view.time_plotter import TimePlotter
 from lumos.view.display_options import DisplayOptions
 
 class MainFrame(wx.Frame):
-    def __init__(self, app, all_data):
-        wx.Frame.__init__(self, parent=None, title='simpleeeee',
+    def __init__(self, application, all_data):
+        wx.Frame.__init__(self, parent=None,
+            title='Counter - visualization for libpurple chat logs',
             size=wx.Size(780,540))
-        self.app = app
+        self.app = application
 
         self.CreateStatusBar()
         self.tbicon = JpgIcon(self)
@@ -40,32 +41,35 @@ class MainFrame(wx.Frame):
         # Here we create the notebook and set up Panels as pages
         nb = wx.Notebook(self)
         quantity_plotter = QuantityPlotter(nb, self.app)
-        time_plotter = TimePlotter(nb, self.app)
-        skew_plotter = SkewPlotter(nb, self.app)
+        time_plotter = TimePlotter(nb)
+        skew_plotter = SkewPlotter(nb)
 
-        nb.AddPage(quantity_plotter, "Quantity")
-        nb.AddPage(time_plotter, "Time")
-        nb.AddPage(skew_plotter, "Skew")
+        nb.AddPage(quantity_plotter, 'Quantity')
+        nb.AddPage(time_plotter, 'Time')
+        nb.AddPage(skew_plotter, 'Skew')
 
         return nb
 
 
     def refresh_data(self, all_data):
-        print "refresh data"
+        print 'refresh data'
         self.load_data(all_data)
 
     def load_data(self, all_data):
-        data = [(bs.buddy_sn, bs.ct, bs.start_time.ctime())
-                for bs in all_data]
+        if len(all_data) == 0:
+            data = [('Data not yet loaded, or is empty', 0, 0)]
+        else:
+            data = [(bs.buddy_sn, bs.ct, bs.start_time.ctime())
+                    for bs in all_data]
         self.lst.update_data(data)
 
     def on_item_focused(self, evt):
-        print "== main frame sees: event " + str(evt.__class__) + \
-            ", " + str(evt.buddy_sns)
+        print '== main frame sees: event ' + str(evt.__class__) + \
+            ', ' + str(evt.buddy_sns)
         self.nb.GetCurrentPage().update(evt.buddy_sns)
 
     def on_page_changed(self, evt):
-        print "== main frame sees: event " + str(evt.__class__)
+        print '== main frame sees: event ' + str(evt.__class__)
         # TODO: the correct way to pass the new page the selected buddy sns
         #       would be to subclass wx.Notebook and stuff our own data inside
         #       the wx.NOTEBOOK_PAGE_CHANGED event, the way we did with
