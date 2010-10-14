@@ -14,6 +14,7 @@ class Util:
 
     CONFIG_NAME_PATH = 'logs_path'
     DEFAULT_DIR = '/Users/' + os.getlogin() + '/Library/Application Support'
+    DEFAULT_DB_TMPL = '/Users/%s/Library/Preferences/lumos/Local Store/db/%s.db'
     DIALOG_MSG = '''Select the directory your libpurple logs live in.
         Examples - Adium stores logs by default at:
           ''' + DEFAULT_DIR + '''/Adium 2.0/Users/Default/Logs/...
@@ -28,7 +29,6 @@ class Util:
         if self.cfg.Exists(Util.CONFIG_NAME_PATH):
             self.path = self.cfg.Read(Util.CONFIG_NAME_PATH)
         else:
-            def_dir = '/Users/' + os.getlogin() + '/Library/Application Support'
             dlg = wx.DirDialog(frame, Util.DIALOG_MSG, Util.DEFAULT_DIR,
                 wx.DD_DIR_MUST_EXIST)
             if dlg.ShowModal() == wx.ID_OK:
@@ -75,8 +75,7 @@ class Util:
         if self.conn is not None:
             return self.conn
 
-        db_path = join('/Users', os.getlogin(), 'Library', 'Preferences', 'lumos',
-                       'Local Store', 'db', self.account_dirname + '.db')
+        db_path = Util.DEFAULT_DB_TMPL % (os.getlogin(), self.account_dirname)
         if not os.path.exists(db_path):
             db_parent = os.path.dirname(db_path)
             if not os.path.exists(db_parent):

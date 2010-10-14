@@ -38,7 +38,7 @@ class Plotter(wx.Panel):
         self.current_buddy_sn_list = buddy_sns
 
         # TODO: decide how we feel about the view looking stuff up in the db
-        ble_entries = lumos.buddy_log_entry.get_all_cumu_logs_for(buddy_sns)
+        ble_entries = lumos.buddy_log_entry.get_cumu_logs_for_set(buddy_sns)
 
         self.figure.clear()
         self.figure.gca().clear()
@@ -53,8 +53,10 @@ class Plotter(wx.Panel):
         pass # abstract
 
     def draw_blank(self, text=DRAW_BLANK_TEXT):
+        all_entries = lumos.buddy_log_entry.get_cumu_logs_for_all()
         self.figure.clear()
-        self.figure.text(0.05, 0.375, text, fontsize=11, color='#333333')
+        self.figure.gca().clear()
+        self.draw(buddy_sns=['representative sample'], ble_entries=all_entries)
 
     def color_for_sn(self, buddy_sn):
         hsh = hash(buddy_sn)

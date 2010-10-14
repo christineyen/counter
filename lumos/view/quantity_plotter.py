@@ -13,11 +13,11 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
     CONVERSATIONS = 2
 
     def __init__(self, parent, application):
-        lumos.view.plotter.Plotter.__init__(
-            self, parent, "Quantity of logs accumulated over time")
+        self.view_type = self.view_types().items()[0][1]
         self.app = application
 
-        self.view_type = self.view_types().items()[0][1]
+        lumos.view.plotter.Plotter.__init__(
+            self, parent, "Quantity of logs accumulated over time")
 
         options = lumos.view.plotter.Options(self,
             label='cumulative:',

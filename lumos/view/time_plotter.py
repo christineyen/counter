@@ -12,9 +12,9 @@ class TimePlotter(lumos.view.plotter.Plotter):
     LENGTH = 1
 
     def __init__(self, parent):
+        self.view_type = self.view_types().items()[0][1]
         lumos.view.plotter.Plotter.__init__(self, parent,
             "Properties of logs by time of day and duration")
-        self.view_type = self.view_types().items()[0][1]
 
         # Consider factoring into skew_plotter
         options = lumos.view.plotter.Options(self,

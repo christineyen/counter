@@ -12,9 +12,8 @@ import lumos.view.main_frame
 class Lumos(wx.App):
 
     def __init__(self, redirect, debug):
-        wx.App.__init__(self, redirect)
-
         self.debug = debug
+        wx.App.__init__(self, redirect)
 
         thread = threading.Thread(target=self.util.update_database,
                                   args=[self.on_db_updated])

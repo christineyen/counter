@@ -15,13 +15,26 @@ import time
 
 import lumos.util
 
-def get_all_cumu_logs_for(buddy_sns):
+def get_cumu_logs_for_all():
+    ''' Get aggregate statistics across all BuddyLogEntrys.
+
+        @return a list of ONE list, representing all data in the db.
+    '''
+    util = lumos.util.Util(None)
+    conn = util.get_connection()
+    user_id = util.get_user_id(util.get_current_sn())
+    entries = get_cumu_logs_for_user(conn, user_id)
+    util.close_connection()
+    return [entries]
+
+
+def get_cumu_logs_for_set(buddy_sns):
     ''' For each buddy_sn passed in via buddy_sns, return a list of
         BuddyLogEntrys.
 
         @param buddy_sns A list of strings representing buddy screen names.
         @return a list of lists, holding individual BuddyLogEntrys.
-        '''
+    '''
     # SUPER hacky - assumes the correct config exists and doesn't need
     # to be checked / populated via dialog on the frame!
     util = lumos.util.Util(None)
@@ -31,22 +44,38 @@ def get_all_cumu_logs_for(buddy_sns):
     all_entries = []
     for buddy_sn in buddy_sns:
         buddy_id = util.get_user_id(buddy_sn)
-        entries = lumos.buddy_log_entry.get_cumu_logs_for_user(
-            conn, user_id, buddy_id, buddy_sn)
+        entries = get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn)
         all_entries.append(entries)
 
     util.close_connection()
     return all_entries
 
-def get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn):
-    """ Gets the data (accumulated by time) of each conversation for a given
-        user. The cumulative 'initiated' data is more positive the more the
-        buddy initiated, and more negative the more you initiated. """
-    list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
 
+def get_cumu_logs_for_user(conn, user_id, buddy_id=0, buddy_sn=''):
+    ''' Gets the data (accumulated by time) of each conversation for a given
+        user. The cumulative 'initiated' data is more positive the more the
+        buddy initiated, and more negative the more you initiated.
+
+        If this data is requested for all data (buddy_id == 0), then we not
+        only select data from all conversations, but only return 50 reprentative
+        data points for the entire set, to not overwhelm the GUI.
+    '''
+    all_users = (buddy_id == 0)
+    cur = conn.cursor()
+    if all_users:
+        cur.execute('''SELECT * FROM conversations WHERE user_id=?
+                    ORDER BY start_time''', (user_id,))
+    else:
+        cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?',
+                    (user_id, buddy_id))
+    list = []
+    for row in cur:
+        list.append(row_to_dictionary(row))
+
+    coarse_intervals = len(list) / 50
     cumu_size = cumu_msgs_buddy = cumu_msgs_user = cumu_initiated = 0
     all_convs = []
-    for entry in list:
+    for i, entry in enumerate(list):
         cumu_size += entry['size']
         cumu_msgs_user += entry['msgs_user']
         cumu_msgs_buddy += entry['msgs_buddy']
@@ -55,48 +84,27 @@ def get_cumu_logs_for_user(conn, user_id, buddy_id, buddy_sn):
                             cumu_size, cumu_initiated, cumu_msgs_user,
                             cumu_msgs_buddy, entry['start_time'],
                             entry['end_time'], None)
-        all_convs.append(ble)
+        if (not all_users) or (i % coarse_intervals ==  0):
+            all_convs.append(ble)
     return all_convs
 
 
-def get_all_logs_for_user(conn, user_id, buddy_id, buddy_sn):
-    """ Gets the raw data of each conversation for a given user """
-    list = fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn)
-
-    all_convs = []
-    for entry in list:
-        ble = BuddyLogEntry(user_id, buddy_sn, buddy_id, entry['size'],
-                            entry['initiated'], entry['msgs_user'],
-                            entry['msgs_buddy'], entry['start_time'],
-                            entry['end_time'], None)
-        all_convs.append(ble)
-    return all_convs
+def row_to_dictionary(row):
+    ''' Wrap a sqlite3 row in a dictionary for easy access. '''
+    return { 'size'       : row['size'],
+             'msgs_buddy' : row['msgs_buddy'],
+             'msgs_user'  : row['msgs_user'],
+             'initiated'  : row['initiated'],
+             'start_time' : row['start_time'],
+             'end_time'   : row['end_time']
+            }
 
 
-""" Fetches the full list of conversations for a user.
-    Returns a list of dictionaries, for easy wrapping."""
-def fetch_all_log_entries_for_user(conn, user_id, buddy_id, buddy_sn):
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM conversations WHERE user_id=? AND buddy_id=?',
-                (user_id, buddy_id))
-    all_convs = []
-    for row in cur:
-        entry = { 'size'       : row['size'],
-                  'msgs_buddy' : row['msgs_buddy'],
-                  'msgs_user'  : row['msgs_user'],
-                  'initiated'  : row['initiated'],
-                  'start_time' : row['start_time'],
-                  'end_time'   : row['end_time']
-                }
-        all_convs.append(entry)
-    return all_convs
-
-
-""" Take a filename, parse the XML, and insert it into the database.
-    Stores most of the attributes raw, in order to do other sorts of
-    processing later.
-    """
 def create(conn, user_sn, user_id, buddy_id, file_nm):
+    ''' Take a filename, parse the XML, and insert it into the database.
+        Stores most of the attributes raw, in order to do other sorts of
+        processing later.
+    '''
     xml = BeautifulStoneSoup(open(file_nm, 'r'))
     msgs = xml('message')
     if len(msgs) == 0: return
