@@ -1,5 +1,6 @@
-README
-======
+# counter
+
+## About
 
 Inspired by Nalsoft [AIM Log Manager](http://www.nalsoft.com/?page=welcome), which I used heavily in the early 2000s, I wanted to create an analogous tool that would provide much of the same functionality for me now.
 
@@ -7,7 +8,24 @@ Inspired by Nalsoft [AIM Log Manager](http://www.nalsoft.com/?page=welcome), whi
 
 **lumos** is the current active branch of the project. Before this iteration, using wxPython, I experimented with **alohomora** (PyObjC - not recommended, unfortunately, but an interesting experiment) and **incendio** (Flex, which was interesting but didn't have the snappiness or native feel I was looking for).
 
-- - -
+## Install
+
+Running the following should be sufficient:
+
+  python init.py
+
+Though note that, if you're using the Apple-supplied Python 2.6 on Snow Leopard, you'll have to set an environment variable for everything to run correctly:
+
+  VERSIONER_PYTHON_PREFER_32_BIT=yes python init.py
+
+## Build / Package the application
+
+Ideally, we'll be able to use [py2app](http://svn.pythonmac.org/py2app/py2app/trunk/doc/index.html) to package up the application for distribution. Still working the kinks out, but it **should** work as follows (deploy VERSIONER_PYTHON_PREFER_32_BIT flag as necessary):
+
+  python setup.py py2app
+
+## Screenshots
+
 Draft screenshots as of 09/02/2010. The 'quantity' screen (compare # bytes, msgs, or conversations logged), the 'time' screen (compare the duration / time interval, or the highest-represented hour/week for logged conversations), and the 'skew' screen (who initiates the conversation more often?):
 
 ![quantity!](http://github.com/christineyen/counter/raw/master/screenshots/quantity.png)

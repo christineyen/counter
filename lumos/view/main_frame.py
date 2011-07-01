@@ -6,7 +6,6 @@ from lumos.view.buddy_list import BuddyListCtrl
 from lumos.view.quantity_plotter import QuantityPlotter
 from lumos.view.skew_plotter import SkewPlotter
 from lumos.view.time_plotter import TimePlotter
-from lumos.view.display_options import DisplayOptions
 
 class MainFrame(wx.Frame):
     def __init__(self, application, all_data):
