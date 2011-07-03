@@ -20,28 +20,27 @@ class SkewPlotter(lumos.view.plotter.Plotter):
             @param ble_entries A list of lists per buddy of BuddyLogEntrys.
             '''
         num_buddies = len(ble_entries)
-        self.figure.clear()
+        axes = self.figure.gca()
         for i, ble_list in enumerate(ble_entries):
-            if len(ble_list) == 0: continue
-            buddy_sn = ble_list[0].buddy_sn
+            x, y_init, y_not_init = self.data(ble_list)
 
-            # add_subplot(): num_buddies rows, 1 column, i+1'th plot
-            ax = self.figure.add_subplot(num_buddies, 1, i+1)
-            x, y = self.data(ble_list)
+            # y_not_init is solid, y_init is not. legend points to solid
 
-            ax.set_title(buddy_sn, size='medium')
-            ax.axhline(color='black', alpha=0.75, linestyle=':')
-            ax.axhspan(min(y), 0, color='black', alpha=0.15)
-            ax.plot(x, y, linestyle='-',
-                marker='o', color=self.color_for_sn(buddy_sn))
-            ax.locator_params(integer=True)
-
+            color = self.color_for_sn(ble_list[0].buddy_sn)
+            bar = axes.bar(x, y_not_init, color=color)
+            axes.bar(x, y_init, edgecolor=color, color=(1, 1, 1))
+        axes.set_ybound(-1, 1)
         self.figure.canvas.draw()
 
     def data(self, ble_list):
-        y = [e.initiated for e in ble_list]
-        y.insert(0, 0)
-
-        return range(len(y)), y
+        y_init = [0] * len(ble_list)
+        y_not_init = [0] * len(ble_list)
+        for i, e in enumerate(ble_list):
+            rat = float(e.msgs_buddy - e.msgs_user) / e.msg_ct()
+            if e.initiated:
+                y_init[i] = rat
+            else:
+                y_not_init[i] = rat
+        return range(len(ble_list)), y_init, y_not_init
 
 # OPTIONS: by initiation and by message count!
