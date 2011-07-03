@@ -12,17 +12,17 @@ Inspired by Nalsoft [AIM Log Manager](http://www.nalsoft.com/?page=welcome), whi
 
 Running the following should be sufficient:
 
-  python init.py
+    python init.py
 
 Though note that, if you're using the Apple-supplied Python 2.6 on Snow Leopard, you'll have to set an environment variable for everything to run correctly:
 
-  VERSIONER_PYTHON_PREFER_32_BIT=yes python init.py
+    VERSIONER_PYTHON_PREFER_32_BIT=yes python init.py
 
 ## Build / Package the application
 
 Ideally, we'll be able to use [py2app](http://svn.pythonmac.org/py2app/py2app/trunk/doc/index.html) to package up the application for distribution. Still working the kinks out, but it **should** work as follows (deploy VERSIONER_PYTHON_PREFER_32_BIT flag as necessary):
 
-  python setup.py py2app
+    python setup.py py2app
 
 ## Screenshots
 
