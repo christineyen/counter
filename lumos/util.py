@@ -2,6 +2,7 @@
 
 import datetime
 import os
+import re
 from os.path import join
 from shutil import copytree, rmtree
 import sqlite3
@@ -37,7 +38,7 @@ class Util:
                     # Trust this path!
                     self.cfg.Write(Util.CONFIG_NAME_PATH, self.path)
         self.account_dirname = self.path.split('/')[-1]
-        self.current_sn = self.path.split('.')[-1]
+        self.current_sn = re.sub('^\w+\.', '', self.account_dirname)
 
     def is_logs_path_sane(self, logs_path):
         logs_path_segments = logs_path.split('/')
