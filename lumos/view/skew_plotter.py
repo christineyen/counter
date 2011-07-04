@@ -21,15 +21,23 @@ class SkewPlotter(lumos.view.plotter.Plotter):
             '''
         num_buddies = len(ble_entries)
         axes = self.figure.gca()
+
+        bar_collection = []
         for i, ble_list in enumerate(ble_entries):
             x, y_init, y_not_init = self.data(ble_list)
-
-            # y_not_init is solid, y_init is not. legend points to solid
-
             color = self.color_for_sn(ble_list[0].buddy_sn)
-            bar = axes.bar(x, y_not_init, color=color)
+
+            bar = axes.bar(x, y_not_init, color=color, edgecolor=color)
+            bar_collection.append(bar[0])
             axes.bar(x, y_init, edgecolor=color, color=(1, 1, 1))
         axes.set_ybound(-1, 1)
+
+        # If the user initiated: empty bars. If the other user initiated, solid
+        # bars.
+
+        # The more positive, the more messages _they_ sent.
+        self.figure.legend(bar_collection, buddy_sns, 'upper left',
+            prop={'size': 'small'})
         self.figure.canvas.draw()
 
     def data(self, ble_list):
@@ -42,5 +50,3 @@ class SkewPlotter(lumos.view.plotter.Plotter):
             else:
                 y_not_init[i] = rat
         return range(len(ble_list)), y_init, y_not_init
-
-# OPTIONS: by initiation and by message count!

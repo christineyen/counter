@@ -101,7 +101,7 @@ class TimePlotter(lumos.view.plotter.Plotter):
             bar = axes.bar(left, heights, bottom=bottoms,
                 color=self.color_for_sn(ble_list[0].buddy_sn),
                 align='center')
-            collections.append(bar)
+            collections.append(bar[0])
         axes.get_xaxis().set_major_formatter(lumos.view.plotter.FORMATTER)
         axes.get_yaxis().set_major_formatter(LengthYFormatter())
         axes.set_ybound(0, 2400)
