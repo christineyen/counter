@@ -72,7 +72,7 @@ def get_cumu_logs_for_user(conn, user_id, buddy_id=0, buddy_sn=''):
     for row in cur:
         list.append(row_to_dictionary(row))
 
-    coarse_intervals = len(list) / 50
+    coarse_intervals = (len(list) / 50) + 1
     cumu_size = cumu_msgs_buddy = cumu_msgs_user = cumu_initiated = 0
     all_convs = []
     for i, entry in enumerate(list):
@@ -84,7 +84,7 @@ def get_cumu_logs_for_user(conn, user_id, buddy_id=0, buddy_sn=''):
                             cumu_size, cumu_initiated, cumu_msgs_user,
                             cumu_msgs_buddy, entry['start_time'],
                             entry['end_time'], None)
-        if (not all_users) or (i % coarse_intervals ==  0):
+        if (not all_users) or (i % coarse_intervals == 0):
             all_convs.append(ble)
     return all_convs
 
