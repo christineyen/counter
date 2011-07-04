@@ -15,6 +15,7 @@ class TestBuddyLogEntry(unittest.TestCase):
     def setUp(self):
         self.entry = BuddyLogEntry(user_id=USER_ID, buddy_sn='someusername',
             buddy_id=USER_ID + 1, size=((MSGS_USER + MSGS_BUDDY) * 100),
+            cumu_msgs_ct=(MSGS_USER + MSGS_BUDDY),
             msgs_user=MSGS_USER, msgs_buddy=MSGS_BUDDY, start_time=START_TIME,
             end_time=END_TIME, timestamp=START_TIME)
 

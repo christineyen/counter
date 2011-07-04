@@ -59,7 +59,7 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
             if self.view_type == QuantityPlotter.BYTES:
                 y.append(e.size)
             elif self.view_type == QuantityPlotter.MSGS:
-                y.append(e.msg_ct())
+                y.append(e.cumu_msgs_ct)
             elif self.view_type == QuantityPlotter.CONVERSATIONS:
                 y.append(i)
 

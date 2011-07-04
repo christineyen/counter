@@ -73,17 +73,17 @@ def get_cumu_logs_for_user(conn, user_id, buddy_id=0, buddy_sn=''):
         list.append(row_to_dictionary(row))
 
     coarse_intervals = (len(list) / 50) + 1
-    cumu_size = cumu_msgs_buddy = cumu_msgs_user = cumu_initiated = 0
+    cumu_size = cumu_msgs_ct = 0
     all_convs = []
     for i, entry in enumerate(list):
         cumu_size += entry['size']
-        cumu_msgs_user += entry['msgs_user']
-        cumu_msgs_buddy += entry['msgs_buddy']
-        cumu_initiated += entry['initiated'] and -1 or 1
+        cumu_msgs_ct += entry['msgs_user'] + entry['msgs_buddy']
+        initiated = entry['initiated'] and 1 or 0
         ble = BuddyLogEntry(user_id, buddy_sn, buddy_id,
-                            cumu_size, cumu_initiated, cumu_msgs_user,
-                            cumu_msgs_buddy, entry['start_time'],
-                            entry['end_time'], None)
+                            cumu_size, initiated, cumu_msgs_ct,
+                            entry['msgs_user'], entry['msgs_buddy'],
+                            entry['start_time'], entry['end_time'],
+                            None)
         if (not all_users) or (i % coarse_intervals == 0):
             all_convs.append(ble)
     return all_convs
@@ -138,13 +138,14 @@ CREATE_NEW_BUDDY_LOG_ENTRY_QUERY = '''
 class BuddyLogEntry(object):
     """A simple object to represent a single chat log"""
     def __init__(self, user_id=-1, buddy_sn='', buddy_id=-1, size=-1,
-                 initiated=1, msgs_user=0, msgs_buddy=0, start_time=None,
-                 end_time=None, timestamp=None):
+                 initiated=0, cumu_msgs_ct=0, msgs_user=0, msgs_buddy=0,
+                 start_time=None, end_time=None, timestamp=None):
         self.user_id = user_id
         self.buddy_sn = buddy_sn
         self.buddy_id = buddy_id
         self.size = size
         self.initiated = initiated
+        self.cumu_msgs_ct = cumu_msgs_ct
         self.msgs_user = msgs_user
         self.msgs_buddy = msgs_buddy
         self.start_time = start_time
