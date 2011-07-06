@@ -41,7 +41,7 @@ class QuantityPlotter(lumos.view.plotter.Plotter):
 
             axes.plot_date(dates.date2num(x), y,
                 linestyle='-',
-                marker='o',
+                marker='o', markeredgewidth=0,
                 color=self.color_for_sn(ble_list[0].buddy_sn))
         axes.get_xaxis().set_major_formatter(lumos.view.plotter.FORMATTER)
         self.figure.legend(axes.get_lines(), buddy_sns, 'upper left',

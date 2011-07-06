@@ -60,8 +60,7 @@ class TimePlotter(lumos.view.plotter.Plotter):
                 sizes.append(xy_values[(x_val, y_val)])
             coll = axes.scatter(x, y, sizes,
                 c=self.color_for_sn(ble_list[0].buddy_sn),
-                linewidths=1,
-                alpha=0.75)
+                edgecolors='none', alpha=0.75)
             collections.append(coll)
         axes.set_xbound(-0.5, 24)
         axes.get_xaxis().set_major_formatter(TimeOfDayXFormatter())
@@ -98,9 +97,9 @@ class TimePlotter(lumos.view.plotter.Plotter):
                     left.append(start)
                     heights.append(top - bottom)
                     bottoms.append(bottom)
+            color = self.color_for_sn(ble_list[0].buddy_sn)
             bar = axes.bar(left, heights, bottom=bottoms,
-                color=self.color_for_sn(ble_list[0].buddy_sn),
-                align='center')
+                color=color, edgecolor=color, linewidth=0, align='center')
             collections.append(bar[0])
         axes.get_xaxis().set_major_formatter(lumos.view.plotter.FORMATTER)
         axes.get_yaxis().set_major_formatter(LengthYFormatter())
