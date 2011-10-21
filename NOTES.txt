@@ -33,4 +33,8 @@ v4:
   [ ] actually think through MVC (do we really need buddy_summary AND
       buddy_log_entry?)
   [ ] add in some decent testing once logic is separated out more cleanly
+[ ] get py2app packaging finally working!
+  - possibly useful: http://mail.python.org/pipermail/pythonmac-sig/2011-June/023167.html
+[ ] expose actual initiation rates in counter (easy win: show # in legend)
+  [ ] sort by http://www.evanmiller.org/how-not-to-sort-by-average-rating.html
 
