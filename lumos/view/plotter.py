@@ -53,7 +53,7 @@ class Plotter(wx.Panel):
         pass # abstract
 
     def draw_blank(self, text=DRAW_BLANK_TEXT):
-        all_entries = lumos.buddy_log_entry.get_cumu_logs_for_all()
+        all_entries = lumos.buddy_log_entry.get_cumu_logs_for_set()
         self.figure.clear()
         self.figure.gca().clear()
         self.draw(buddy_sns=['representative sample'], ble_entries=all_entries)
