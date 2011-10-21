@@ -9,19 +9,28 @@ On load:
 UI-wise, I'm not sure yet how this is going to play out, but here are some of the main statistics I'd like to show:
 
 v1:
-- conversation size (in bytes and messages) / user / time
-- conversation length (time wise) / user / time
-- conversation skew (who ims whom first, who dominates)
+[x] conversation size (in bytes and messages) / user / time
+[x] conversation length (time wise) / user / time
+[x] conversation skew (who ims whom first, who dominates)
 
 v2:
-- some indication of time of day conversations typically happen
-- GUI work to improve toggling, etc
-- allow multiple local users?
+[x] some indication of time of day conversations typically happen
+[x] GUI work to improve toggling, etc
+[ ] allow multiple local users?
 
 v3:
-- most common words used in conversation
-- how quickly the im happens after the window opens (?) or the user signs on
+[ ] most common words used in conversation
+[ ] how quickly the im happens after the window opens (?) or the user signs on
 
 v4:
-- intelligent contacts matching (vashah@gmail.com vs vivekatmit)
+[ ] intelligent / manual contacts matching across protocols
+
+
+
+== TODO
+[ ] HIGH-LEVL CLEANUP
+  [ ] change some module-level functions into classmethods?
+  [ ] actually think through MVC (do we really need buddy_summary AND
+      buddy_log_entry?)
+  [ ] add in some decent testing once logic is separated out more cleanly
 
