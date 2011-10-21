@@ -60,7 +60,7 @@ class BuddyLogEntry(object):
             pass
 
     @classmethod
-    def get_cumu_logs_for_set(cls, buddy_sns=[]):
+    def get_cumu_logs_for_set(cls, buddy_sns):
         ''' For each buddy_sn passed in via buddy_sns, return a list of
             BuddyLogEntrys.
 

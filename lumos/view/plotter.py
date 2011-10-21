@@ -25,16 +25,15 @@ class Plotter(wx.Panel):
         self.figure.set_facecolor('white')
         self.canvas = FigureCanvasWxAgg(self, -1, self.figure)
 
-        self.draw_blank()
+        self.update()
         self.current_buddy_sn_list = []
 
-    def update(self, buddy_sns):
+    def update(self, buddy_sns=[]):
         ''' The general 'update' logic for a plotter. Subclasses override
             draw() in order to provide unique behavior.
 
             @param buddy_sns A list of strings representing buddy screen names.
             '''
-        if len(buddy_sns) == 0: return self.draw_blank()
         self.current_buddy_sn_list = buddy_sns
 
         # TODO: decide how we feel about the view looking stuff up in the db
@@ -42,6 +41,8 @@ class Plotter(wx.Panel):
 
         self.figure.clear()
         self.figure.gca().clear()
+
+        if len(buddy_sns) == 0: buddy_sns = ['representative sample']
         self.draw(buddy_sns=buddy_sns, ble_entries=ble_entries)
 
     def draw(self, buddy_sns=[], ble_entries=[]):
@@ -51,12 +52,6 @@ class Plotter(wx.Panel):
             @param ble_entries A list of lists per buddy of BuddyLogEntrys.
         '''
         pass # abstract
-
-    def draw_blank(self, text=DRAW_BLANK_TEXT):
-        all_entries = BuddyLogEntry.get_cumu_logs_for_set()
-        self.figure.clear()
-        self.figure.gca().clear()
-        self.draw(buddy_sns=['representative sample'], ble_entries=all_entries)
 
     def color_for_sn(self, buddy_sn):
         hsh = hash(buddy_sn)
