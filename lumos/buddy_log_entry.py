@@ -8,7 +8,7 @@
 
 from BeautifulSoup import BeautifulStoneSoup
 from datetime import datetime
-from dateutil.parser import parse
+from dateutil import parser
 from os import stat
 import sqlite3
 import time
@@ -45,8 +45,8 @@ class BuddyLogEntry(object):
         their_msgs = len(msgs)-my_msgs
         initiated = (msgs[0]['sender'] == user_sn)
 
-        start_time = parse(msgs[0]['time'].replace('.', ':'))
-        end_time = parse(msgs[-1]['time'].replace('.', ':'))
+        start_time = parser.parse(msgs[0]['time'].replace('.', ':'), fuzzy=True)
+        end_time = parser.parse(msgs[-1]['time'].replace('.', ':'), fuzzy=True)
         stats = stat(file_nm)
 
         cur = conn.cursor()
