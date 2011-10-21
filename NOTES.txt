@@ -29,7 +29,7 @@ v4:
 
 == TODO
 [ ] HIGH-LEVL CLEANUP
-  [ ] change some module-level functions into classmethods?
+  [x] change some module-level functions into classmethods?
   [ ] actually think through MVC (do we really need buddy_summary AND
       buddy_log_entry?)
   [ ] add in some decent testing once logic is separated out more cleanly

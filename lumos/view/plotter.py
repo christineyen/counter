@@ -8,7 +8,7 @@ matplotlib.rc('font', size=10.0)
 
 import wx
 
-import lumos.buddy_log_entry
+from lumos.buddy_log_entry import BuddyLogEntry
 
 DRAW_BLANK_TEXT= '''You have not selected any conversations to graph.\n
 Please click on one or more buddy screen names on the left\n
@@ -38,7 +38,7 @@ class Plotter(wx.Panel):
         self.current_buddy_sn_list = buddy_sns
 
         # TODO: decide how we feel about the view looking stuff up in the db
-        ble_entries = lumos.buddy_log_entry.get_cumu_logs_for_set(buddy_sns)
+        ble_entries = BuddyLogEntry.get_cumu_logs_for_set(buddy_sns)
 
         self.figure.clear()
         self.figure.gca().clear()
@@ -53,7 +53,7 @@ class Plotter(wx.Panel):
         pass # abstract
 
     def draw_blank(self, text=DRAW_BLANK_TEXT):
-        all_entries = lumos.buddy_log_entry.get_cumu_logs_for_set()
+        all_entries = BuddyLogEntry.get_cumu_logs_for_set()
         self.figure.clear()
         self.figure.gca().clear()
         self.draw(buddy_sns=['representative sample'], ble_entries=all_entries)

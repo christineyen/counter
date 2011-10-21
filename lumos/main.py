@@ -5,7 +5,7 @@ import threading
 
 import wx
 
-import lumos.buddy_summary
+from lumos.buddy_summary import BuddySummary
 import lumos.util
 import lumos.view.main_frame
 
@@ -34,6 +34,6 @@ class Lumos(wx.App):
 
         user_id = new_util.get_user_id(new_util.get_current_sn())
 
-        self.frame.refresh_data(lumos.buddy_summary.get_all(conn, user_id))
+        self.frame.refresh_data(BuddySummary.get_all(conn, user_id))
         new_util.close_connection()
 

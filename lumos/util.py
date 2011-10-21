@@ -9,7 +9,7 @@ import sqlite3
 
 import wx
 
-import lumos.buddy_log_entry
+from lumos.buddy_log_entry import BuddyLogEntry
 
 class Util:
 
@@ -26,6 +26,9 @@ class Util:
         self.path = ''
         self.sns_to_ids = {}
         self.conn = None
+
+        #self.cfg.DeleteAll()
+        #return
 
         if self.cfg.Exists(Util.CONFIG_NAME_PATH):
             self.path = self.cfg.Read(Util.CONFIG_NAME_PATH)
@@ -139,6 +142,6 @@ class Util:
                         continue
                     user_id = self.get_user_id(self.get_current_sn())
                     buddy_id = self.get_user_id(username)
-                    lumos.buddy_log_entry.create(conn, self.get_current_sn(),
-                                           user_id, buddy_id, join(root, name))
+                    BuddyLogEntry.create(conn, self.get_current_sn(),
+                                         user_id, buddy_id, join(root, name))
 
