@@ -1,8 +1,8 @@
-db/*
-.*.swp
-*.pyc
-incendio/bin-debug/*
-build
-dist
-lumos/build
-lumos/dist
+.DS_Store
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspectivev3
+*.xcworkspace
+*.swp
+xcuserdata
