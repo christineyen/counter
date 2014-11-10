@@ -7,8 +7,10 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import <CorePlot/CorePlot.h>
 
 @interface CYRMainWindowController : NSWindowController
 @property (weak, nonatomic) IBOutlet NSTableView *tableView;
+@property (weak, nonatomic) IBOutlet CPTGraphHostingView *graphView;
 
 @end
