@@ -219,8 +219,8 @@
     }
     
     NSError *error = nil;
-    if (![[self managedObjectContext] save:&error]) {
-
+    BOOL succeeded = [[self managedObjectContext] save:&error];
+    if (!succeeded && error) {
         // Customize this code block to include application-specific recovery steps.              
         BOOL result = [sender presentError:error];
         if (result) {

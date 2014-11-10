@@ -17,6 +17,8 @@
 @property (strong, nonatomic) User *buddy;
 @property (strong, nonatomic) Conversation *conversation;
 @property (strong, nonatomic) NSArray *messages;
+
+- (id)initWithPath:(NSString *)path attributes:(NSDictionary *)attributes;
 - (id)initWithXMLDocument:(NSString *)doc;
 @end
 
@@ -71,6 +73,15 @@ static NSString *const xml = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
     XCTAssertFalse([importer.conversation.initiated boolValue]);
     XCTAssertNotNil(importer.conversation.startTime);
     XCTAssertNotNil(importer.conversation.endTime);
+}
+
+- (void)testParseWithAttributes {
+    NSDictionary *attrs = @{
+                            NSFileSize: @500,
+                            NSFileCreationDate: [NSDate dateWithTimeIntervalSince1970:1262304000] };
+    CYRImporter *importer = [[CYRImporter alloc] initWithPath:@"foo" attributes:attrs];
+    XCTAssertEqualObjects(importer.conversation.size, attrs[NSFileSize]);
+    XCTAssertEqualObjects(importer.conversation.timestamp, attrs[NSFileCreationDate]);
 }
 
 @end

@@ -34,19 +34,19 @@
 @property (strong, nonatomic) NSXMLParser *parser;
 @property (strong, nonatomic) NSManagedObjectContext *context;
 
-- (id)initWithPath:(NSString *)path size:(unsigned long long)size;
+- (id)initWithPath:(NSString *)path attributes:(NSDictionary *)attributes;
 - (id)initWithXMLDocument:(NSString *)doc;
 - (void)_parseDocument;
-- (void)_handleMessage:(NSDictionary *)attributeDict;
-- (void)_handleWindowClosed:(NSDictionary *)attributeDict;
 - (User *)_ensureUser:(NSString *)handle;
 
 + (NSDateFormatter *)dateFormatter;
++ (NSManagedObjectContext *)context;
 @end
 
 @implementation CYRImporter
 
-static NSString *const kLogPathKey = @"LogsPath4";
+static NSString *const kLogPathKey = @"LogsPath";
+static NSString *const kLastImportedKey = @"LastImported";
 
 + (NSString *)logsPath {
     return [[NSUserDefaults standardUserDefaults] stringForKey:kLogPathKey];
@@ -86,20 +86,42 @@ static NSString *const kLogPathKey = @"LogsPath4";
                                           includingPropertiesForKeys:@[ NSURLIsRegularFileKey ]
                                                              options:NSDirectoryEnumerationSkipsHiddenFiles
                                                         errorHandler:nil];
+    NSTimeInterval latestImport = [[NSUserDefaults standardUserDefaults] doubleForKey:kLastImportedKey];
+    
     NSError *err;
+    NSDate *date;
     for (NSURL *theURL in enumerator) {
         NSNumber *isFileKey;
         [theURL getResourceValue:&isFileKey forKey:NSURLIsRegularFileKey error:nil];
         if (![isFileKey boolValue]) {
             continue;
         }
-
+        
         NSDictionary *attributes = [fileManager attributesOfItemAtPath:[theURL path] error:&err];
         if (err != nil) {
-            NSLog(@"Failed to stat file at %@", [theURL path]);
+            NSLog(@"Failed to get attributes file at %@", [theURL path]);
             break;
         }
-        [[self alloc] initWithPath:[theURL path] size:[attributes fileSize]];
+        
+        NSDate *creationDate = [attributes fileCreationDate];
+        if ([creationDate timeIntervalSince1970] < latestImport) {
+            continue;
+        }
+
+        CYRImporter *importer = [[self alloc] initWithPath:[theURL path] attributes:attributes];
+        NSAssert([importer.conversation.size integerValue] > 0, @"Ensure that the conversation.size > 0");
+        NSLog(@"imported %@ bytes at %@", importer.conversation.size, [theURL path]);
+        
+        date = importer.conversation.timestamp;
+    }
+    NSError *ctxErr;
+    [self.context save:&ctxErr];
+    if (ctxErr != nil) {
+        NSLog(@"error saving context: %@", ctxErr);
+    } else {
+        NSLog(@"saved context. setting last imported at %@", date);
+        [[NSUserDefaults standardUserDefaults] setDouble:[date timeIntervalSince1970] forKey:kLastImportedKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
     }
 }
 
@@ -112,13 +134,23 @@ static NSString *const kLogPathKey = @"LogsPath4";
     return formatter;
 }
 
-- (id)initWithPath:(NSString *)path size:(unsigned long long)size {
++ (NSManagedObjectContext *)context {
+    static NSManagedObjectContext *context = nil;
+    if (context == nil) {
+        CYRAppDelegate *delegate = [[NSApplication sharedApplication] delegate];
+        context = delegate.managedObjectContext;
+    }
+    return context;
+}
+
+- (id)initWithPath:(NSString *)path attributes:(NSDictionary *)attributes {
     NSString *conv = [NSString stringWithContentsOfFile:path
                                                encoding:NSUTF8StringEncoding
                                                   error:NULL];
     if (self = [self initWithXMLDocument:conv]) {
         self.conversation.path = path;
-        self.conversation.size = @(size);
+        self.conversation.size = [attributes objectForKey:NSFileSize];
+        self.conversation.timestamp = [attributes objectForKey:NSFileCreationDate];
     }
     return self;
 }
@@ -136,31 +168,39 @@ static NSString *const kLogPathKey = @"LogsPath4";
 - (Conversation *)conversation {
     if (_conversation == nil) {
         NSEntityDescription *convEntity = [NSEntityDescription entityForName:@"Conversation"
-                                                      inManagedObjectContext:self.context];
+                                                      inManagedObjectContext:[[self class] context]];
         _conversation = [[Conversation alloc] initWithEntity:convEntity
-                              insertIntoManagedObjectContext:self.context];
+                              insertIntoManagedObjectContext:[[self class] context]];
         _conversation.initiated = @NO;
     }
     return _conversation;
-}
-
-- (NSManagedObjectContext *)context {
-    if (_context == nil) {
-        CYRAppDelegate *delegate = [[NSApplication sharedApplication] delegate];
-        _context = delegate.managedObjectContext;
-    }
-    return _context;
 }
 
 #pragma mark - NSXMLParserDelegate methods
 // https://github.com/mwaterfall/MWFeedParser/blob/master/Classes/MWFeedParser.m
 
 - (void)parser:(NSXMLParser *)parser didStartElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName attributes:(NSDictionary *)attributeDict {
-    if ([elementName isEqualToString:@"message"]) {
-        [self _handleMessage:attributeDict];
-    } else if ([elementName isEqualToString:@"windowClosed"]) {
-        [self _handleWindowClosed:attributeDict];
+    if (![elementName isEqualToString:@"message"]) {
+        return;
     }
+    
+    BOOL firstMsg = self.totalCount == 0;
+    BOOL senderIsSelf = [[attributeDict objectForKey:@"sender"] isEqualToString:@"cyenatwork"];
+    
+    if (firstMsg && senderIsSelf) {
+        self.conversation.initiated = @YES;
+    }
+    if (firstMsg) {
+        self.conversation.startTime = [[[self class] dateFormatter] dateFromString:[attributeDict objectForKey:@"time"]];
+    }
+    if (senderIsSelf) {
+        self.myMsgCount += 1;
+    } else {
+        self.buddyHandle = [attributeDict objectForKey:@"sender"];
+    }
+    
+    self.latestTime = [attributeDict objectForKey:@"time"];
+    self.totalCount += 1;
 }
 
 - (void)parser:(NSXMLParser *)parser didEndElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName {
@@ -204,36 +244,6 @@ static NSString *const kLogPathKey = @"LogsPath4";
     self.parser = nil;
     self.user = [self _ensureUser:@"cyenatwork"];
     self.buddy = [self _ensureUser:self.buddyHandle];
-    
-    NSError *err;
-    [self.context save:&err];
-    if (err != nil) {
-        NSLog(@"errrr: %@", err);
-    }
-}
-
-- (void)_handleMessage:(NSDictionary *)attributeDict {
-    BOOL firstMsg = self.totalCount == 0;
-    BOOL senderIsSelf = [[attributeDict objectForKey:@"sender"] isEqualToString:@"cyenatwork"];
-    
-    if (firstMsg && senderIsSelf) {
-        self.conversation.initiated = @YES;
-    }
-    if (firstMsg) {
-        self.conversation.startTime = [[[self class] dateFormatter] dateFromString:[attributeDict objectForKey:@"time"]];
-    }
-    if (senderIsSelf) {
-        self.myMsgCount += 1;
-    } else {
-        self.buddyHandle = [attributeDict objectForKey:@"sender"];
-    }
-
-    self.latestTime = [attributeDict objectForKey:@"time"];
-    self.totalCount += 1;
-}
-
-- (void)_handleWindowClosed:(NSDictionary *)attributeDict {
-    self.conversation.timestamp = [[[self class] dateFormatter] dateFromString:[attributeDict objectForKey:@"time"]];
 }
 
 - (User *)_ensureUser:(NSString *)handle {
@@ -243,7 +253,7 @@ static NSString *const kLogPathKey = @"LogsPath4";
     request.predicate = predicate;
     
     NSError *err = nil;
-    NSArray *results = [self.context executeFetchRequest:request error:&err];
+    NSArray *results = [[[self class] context] executeFetchRequest:request error:&err];
     if (results != nil && [results count] > 0) {
         if ([results count] > 1) {
             NSLog(@"WARNING: we have multiple User objects?!");
@@ -253,9 +263,9 @@ static NSString *const kLogPathKey = @"LogsPath4";
     
     // else, create a record
     NSEntityDescription *entity = [NSEntityDescription entityForName:@"User"
-                                              inManagedObjectContext:self.context];
+                                              inManagedObjectContext:[[self class] context]];
     User *user = [[User alloc] initWithEntity:entity
-               insertIntoManagedObjectContext:self.context];
+               insertIntoManagedObjectContext:[[self class] context]];
     user.handle = handle;
     return (User *)user;
 }
