@@ -104,7 +104,7 @@ static NSString *const kLastImportedKey = @"LastImported";
         }
         
         NSDate *creationDate = [attributes fileCreationDate];
-        if ([creationDate timeIntervalSince1970] < latestImport) {
+        if ([creationDate timeIntervalSince1970] <= latestImport) {
             continue;
         }
 
@@ -118,7 +118,7 @@ static NSString *const kLastImportedKey = @"LastImported";
     [self.context save:&ctxErr];
     if (ctxErr != nil) {
         NSLog(@"error saving context: %@", ctxErr);
-    } else {
+    } else if (date != nil) {
         NSLog(@"saved context. setting last imported at %@", date);
         [[NSUserDefaults standardUserDefaults] setDouble:[date timeIntervalSince1970] forKey:kLastImportedKey];
         [[NSUserDefaults standardUserDefaults] synchronize];
@@ -167,10 +167,7 @@ static NSString *const kLastImportedKey = @"LastImported";
 
 - (Conversation *)conversation {
     if (_conversation == nil) {
-        NSEntityDescription *convEntity = [NSEntityDescription entityForName:@"Conversation"
-                                                      inManagedObjectContext:[[self class] context]];
-        _conversation = [[Conversation alloc] initWithEntity:convEntity
-                              insertIntoManagedObjectContext:[[self class] context]];
+        _conversation = [NSEntityDescription insertNewObjectForEntityForName:@"Conversation" inManagedObjectContext:[[self class] context]];
         _conversation.initiated = @NO;
     }
     return _conversation;
@@ -244,6 +241,8 @@ static NSString *const kLastImportedKey = @"LastImported";
     self.parser = nil;
     self.user = [self _ensureUser:@"cyenatwork"];
     self.buddy = [self _ensureUser:self.buddyHandle];
+    self.conversation.user = self.user;
+    self.conversation.buddy = self.buddy;
 }
 
 - (User *)_ensureUser:(NSString *)handle {
@@ -262,10 +261,9 @@ static NSString *const kLastImportedKey = @"LastImported";
     }
     
     // else, create a record
-    NSEntityDescription *entity = [NSEntityDescription entityForName:@"User"
-                                              inManagedObjectContext:[[self class] context]];
-    User *user = [[User alloc] initWithEntity:entity
-               insertIntoManagedObjectContext:[[self class] context]];
+    User *user = [NSEntityDescription insertNewObjectForEntityForName:@"User"
+                                               inManagedObjectContext:[[self class] context]];
+    
     user.handle = handle;
     return (User *)user;
 }
