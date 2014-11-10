@@ -6,8 +6,6 @@
 //  Copyright (c) 2013 ChristineYen. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
-
 @interface CYRImporter : NSObject
 + (NSString *)logsPath;
 + (BOOL)setLogsPath:(NSString *)path error:(NSError **)error;

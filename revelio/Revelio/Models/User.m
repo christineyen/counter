@@ -17,7 +17,7 @@
 
 - (BOOL)validateHandle:(id *)handleValue error:(NSError * __autoreleasing *)outError {
     NSFetchRequest *req = [NSFetchRequest fetchRequestWithEntityName:@"User"];
-    req.predicate = [NSPredicate predicateWithFormat:@"handle == %@", handleValue];
+    req.predicate = [NSPredicate predicateWithFormat:@"handle == %@", *handleValue];
 
     NSError *error = nil;
     CYRAppDelegate *appDelegate = (CYRAppDelegate *)[[NSApplication sharedApplication] delegate];
