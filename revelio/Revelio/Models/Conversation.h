@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <CoreData/CoreData.h>
 
+@class Account;
 
 @interface Conversation : NSManagedObject
 
@@ -20,7 +21,7 @@
 @property (nonatomic, retain) NSDate * endTime;
 @property (nonatomic, retain) NSDate * timestamp;
 @property (nonatomic, retain) NSString * path;
-@property (nonatomic, retain) NSManagedObject *user;
-@property (nonatomic, retain) NSManagedObject *buddy;
+@property (nonatomic, retain) Account *user;
+@property (nonatomic, retain) Account *buddy;
 
 @end

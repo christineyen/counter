@@ -1,5 +1,5 @@
 //
-//  User.h
+//  Account.h
 //  Revelio
 //
 //  Created by Christine Yen on 11/21/13.
@@ -11,7 +11,7 @@
 
 @class Conversation;
 
-@interface User : NSManagedObject
+@interface Account : NSManagedObject
 
 @property (nonatomic, retain) NSString * handle;
 @property (nonatomic, retain) Conversation *conversations;

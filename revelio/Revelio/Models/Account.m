@@ -1,22 +1,22 @@
 //
-//  User.m
+//  Account.m
 //  Revelio
 //
 //  Created by Christine Yen on 11/21/13.
 //  Copyright (c) 2013 ChristineYen. All rights reserved.
 //
 
-#import "User.h"
+#import "Account.h"
 #import "Conversation.h"
 #import "CYRAppDelegate.h"
 
-@implementation User
+@implementation Account
 
 @dynamic handle;
 @dynamic conversations;
 
 - (BOOL)validateHandle:(id *)handleValue error:(NSError * __autoreleasing *)outError {
-    NSFetchRequest *req = [NSFetchRequest fetchRequestWithEntityName:@"User"];
+    NSFetchRequest *req = [NSFetchRequest fetchRequestWithEntityName:@"Account"];
     req.predicate = [NSPredicate predicateWithFormat:@"handle == %@", *handleValue];
 
     NSError *error = nil;

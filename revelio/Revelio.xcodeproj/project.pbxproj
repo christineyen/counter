@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9726E3B41A1080B10047E3D9 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 974AF116183CB8BC00436B0E /* CoreData.framework */; };
+		9726E4501A1086870047E3D9 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 974AF115183CB8BC00436B0E /* AppKit.framework */; };
 		974AF113183CB8BC00436B0E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 974AF112183CB8BC00436B0E /* Cocoa.framework */; };
 		974AF11D183CB8BC00436B0E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 974AF11B183CB8BC00436B0E /* InfoPlist.strings */; };
 		974AF11F183CB8BC00436B0E /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 974AF11E183CB8BC00436B0E /* main.m */; };
@@ -20,7 +22,7 @@
 		974AF13E183CB8BD00436B0E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 974AF13C183CB8BD00436B0E /* InfoPlist.strings */; };
 		974AF140183CB8BD00436B0E /* RevelioTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 974AF13F183CB8BD00436B0E /* RevelioTests.m */; };
 		975D823A183F295C0057EA04 /* Conversation.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D8239183F295C0057EA04 /* Conversation.m */; };
-		975D823D183F295C0057EA04 /* User.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D823C183F295C0057EA04 /* User.m */; };
+		975D823D183F295C0057EA04 /* Account.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D823C183F295C0057EA04 /* Account.m */; };
 		975D8241183F2A100057EA04 /* CYRImporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D8240183F2A100057EA04 /* CYRImporter.m */; };
 		975D8254183F46240057EA04 /* CYRMainWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D8252183F46240057EA04 /* CYRMainWindowController.m */; };
 		975D8255183F46240057EA04 /* CYRMainWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 975D8253183F46240057EA04 /* CYRMainWindowController.xib */; };
@@ -59,11 +61,10 @@
 		974AF13F183CB8BD00436B0E /* RevelioTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RevelioTests.m; sourceTree = "<group>"; };
 		975D8238183F295C0057EA04 /* Conversation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Conversation.h; sourceTree = "<group>"; };
 		975D8239183F295C0057EA04 /* Conversation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Conversation.m; sourceTree = "<group>"; };
-		975D823B183F295C0057EA04 /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
-		975D823C183F295C0057EA04 /* User.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = User.m; sourceTree = "<group>"; };
+		975D823B183F295C0057EA04 /* Account.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Account.h; sourceTree = "<group>"; };
+		975D823C183F295C0057EA04 /* Account.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Account.m; sourceTree = "<group>"; };
 		975D823F183F2A100057EA04 /* CYRImporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CYRImporter.h; sourceTree = "<group>"; };
 		975D8240183F2A100057EA04 /* CYRImporter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CYRImporter.m; sourceTree = "<group>"; };
-		975D8242183F2A530057EA04 /* Revelio.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Revelio.entitlements; sourceTree = "<group>"; };
 		975D8251183F46240057EA04 /* CYRMainWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CYRMainWindowController.h; sourceTree = "<group>"; };
 		975D8252183F46240057EA04 /* CYRMainWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CYRMainWindowController.m; sourceTree = "<group>"; };
 		975D8253183F46240057EA04 /* CYRMainWindowController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = CYRMainWindowController.xib; sourceTree = "<group>"; };
@@ -74,6 +75,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9726E4501A1086870047E3D9 /* AppKit.framework in Frameworks */,
+				9726E3B41A1080B10047E3D9 /* CoreData.framework in Frameworks */,
 				974AF113183CB8BC00436B0E /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -144,7 +147,6 @@
 		974AF119183CB8BC00436B0E /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				975D8242183F2A530057EA04 /* Revelio.entitlements */,
 				974AF11A183CB8BC00436B0E /* Revelio-Info.plist */,
 				974AF11B183CB8BC00436B0E /* InfoPlist.strings */,
 				974AF11E183CB8BC00436B0E /* main.m */,
@@ -176,8 +178,8 @@
 			isa = PBXGroup;
 			children = (
 				974AF12A183CB8BC00436B0E /* Revelio.xcdatamodeld */,
-				975D823B183F295C0057EA04 /* User.h */,
-				975D823C183F295C0057EA04 /* User.m */,
+				975D823B183F295C0057EA04 /* Account.h */,
+				975D823C183F295C0057EA04 /* Account.m */,
 				975D8238183F295C0057EA04 /* Conversation.h */,
 				975D8239183F295C0057EA04 /* Conversation.m */,
 				975D823F183F2A100057EA04 /* CYRImporter.h */,
@@ -249,7 +251,7 @@
 					974AF10E183CB8BC00436B0E = {
 						SystemCapabilities = {
 							com.apple.Sandbox = {
-								enabled = 1;
+								enabled = 0;
 							};
 						};
 					};
@@ -306,7 +308,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				975D8254183F46240057EA04 /* CYRMainWindowController.m in Sources */,
-				975D823D183F295C0057EA04 /* User.m in Sources */,
+				975D823D183F295C0057EA04 /* Account.m in Sources */,
 				975D823A183F295C0057EA04 /* Conversation.m in Sources */,
 				974AF12C183CB8BC00436B0E /* Revelio.xcdatamodeld in Sources */,
 				974AF11F183CB8BC00436B0E /* main.m in Sources */,
@@ -442,7 +444,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Revelio/Revelio.entitlements;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Revelio/Revelio-Prefix.pch";
@@ -456,7 +458,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Revelio/Revelio.entitlements;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Revelio/Revelio-Prefix.pch";

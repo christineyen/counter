@@ -9,13 +9,13 @@
 #import "CYRImporter.h"
 #import "CYRAppDelegate.h"
 
-#import "User.h"
+#import "Account.h"
 #import "Conversation.h"
 
 @interface CYRImporter ()<NSXMLParserDelegate>
 
-@property (strong, nonatomic) User *user;
-@property (strong, nonatomic) User *buddy;
+@property (strong, nonatomic) Account *user;
+@property (strong, nonatomic) Account *buddy;
 @property (strong, nonatomic) Conversation *conversation;
 @property (strong, nonatomic) NSMutableArray *messages;
 
@@ -37,7 +37,7 @@
 - (id)initWithPath:(NSString *)path attributes:(NSDictionary *)attributes;
 - (id)initWithXMLDocument:(NSString *)doc;
 - (void)_parseDocument;
-- (User *)_ensureUser:(NSString *)handle;
+- (Account *)_ensureUser:(NSString *)handle;
 
 + (NSDateFormatter *)dateFormatter;
 + (NSManagedObjectContext *)context;
@@ -245,8 +245,8 @@ static NSString *const kLastImportedKey = @"LastImported";
     self.conversation.buddy = self.buddy;
 }
 
-- (User *)_ensureUser:(NSString *)handle {
-    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"User"];
+- (Account *)_ensureUser:(NSString *)handle {
+    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Account"];
     
     NSPredicate *predicate = [NSPredicate predicateWithFormat:@"handle = %@", handle];
     request.predicate = predicate;
@@ -261,11 +261,11 @@ static NSString *const kLastImportedKey = @"LastImported";
     }
     
     // else, create a record
-    User *user = [NSEntityDescription insertNewObjectForEntityForName:@"User"
+    Account *user = [NSEntityDescription insertNewObjectForEntityForName:@"Account"
                                                inManagedObjectContext:[[self class] context]];
     
     user.handle = handle;
-    return (User *)user;
+    return (Account *)user;
 }
 
 @end

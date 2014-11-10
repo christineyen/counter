@@ -9,7 +9,7 @@
 #import "CYRMainWindowController.h"
 
 #import "CYRAppDelegate.h"
-#import "User.h"
+#import "Account.h"
 
 @interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate>
 @property (strong, nonatomic) NSArray *results;
@@ -52,7 +52,7 @@
 }
 
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
-    User *obj = [self.results objectAtIndex:row];
+    Account *obj = [self.results objectAtIndex:row];
     if ([tableColumn.identifier isEqualToString:@"snColumn"]) {
         return obj.handle;
     } else if ([tableColumn.identifier isEqualToString:@"numColumn"]) {
