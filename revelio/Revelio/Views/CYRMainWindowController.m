@@ -10,9 +10,12 @@
 
 #import "CYRAppDelegate.h"
 #import "Account.h"
+#import "Conversation.h"
 
 @interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate>
 @property (strong, nonatomic) NSArray *results;
+
+@property (strong, nonatomic) NSDateFormatter *dateFormatter;
 @end
 
 @implementation CYRMainWindowController
@@ -44,21 +47,33 @@
     [self.tableView reloadData];
 }
 
+#pragma mark - Properties
+- (NSDateFormatter *)dateFormatter {
+    if (_dateFormatter == nil) {
+        _dateFormatter = [[NSDateFormatter alloc] init];
+        [_dateFormatter setDateStyle:NSDateFormatterMediumStyle];
+        [_dateFormatter setTimeStyle:NSDateFormatterNoStyle];
+    }
+    return _dateFormatter;
+}
+
+#pragma mark - NSTableViewDataSource methods
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView {
     return [self.results count];
 }
 
 - (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)tableColumn row:(NSInteger)row {
-    Account *obj = [self.results objectAtIndex:row];
+    Account *account = [self.results objectAtIndex:row];
     if ([tableColumn.identifier isEqualToString:@"snColumn"]) {
-        return obj.handle;
+        return account.handle;
     } else if ([tableColumn.identifier isEqualToString:@"numColumn"]) {
-        return @"0";
+        return @([account.conversations count]);
     }
     // lastColumn
-    return @"??";
+    return [self.dateFormatter stringFromDate:[[account lastConversation] timestamp]];
 }
 
+#pragma mark - NSTableViewDelegate methods
 - (void)tableViewSelectionDidChange:(NSNotification *)notification {
     NSLog(@"clicked %@", [notification userInfo]);
 }
