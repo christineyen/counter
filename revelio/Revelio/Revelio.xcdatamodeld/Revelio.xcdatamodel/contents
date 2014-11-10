@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="6252" systemVersion="14A389" minimumToolsVersion="Automatic" macOSVersion="Automatic" iOSVersion="Automatic">
-    <entity name="Account" representedClassName="User" syncable="YES">
+    <entity name="Account" representedClassName="Account" syncable="YES">
         <attribute name="handle" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="conversations" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Conversation" inverseName="buddy" inverseEntity="Conversation" syncable="YES"/>
         <relationship name="selfConversations" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Conversation" inverseName="user" inverseEntity="Conversation" syncable="YES"/>

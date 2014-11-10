@@ -24,40 +24,12 @@
 @implementation CYRAppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    NSLog(@"context: %@", self.managedObjectContext);
-    
-    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Account"];
-    NSError *err;
-    NSArray *results = [self.managedObjectContext executeFetchRequest:request error:&err];
-    NSLog(@"got: %@", results);
-    
-    NSManagedObject *obj = [NSEntityDescription insertNewObjectForEntityForName:@"Account"
-                                                         inManagedObjectContext:self.managedObjectContext];
-//    [obj setValue:@"Handle" forKey:@"handle"];
-    
-    NSError *error = nil;
-    
-    if (![self.managedObjectContext commitEditing]) {
-        NSLog(@"%@:%@ unable to commit editing before saving", [self class], NSStringFromSelector(_cmd));
-    }
-    
-    NSLog(@"has changes? %@", [self.managedObjectContext hasChanges] ? @"Y": @"N");
-    if ([self.managedObjectContext save:&error]) {
-        NSLog(@"saved!");
+    if ([CYRImporter logsPath]) {
+        [self.mainWindowController showWindow:self];
+        [CYRImporter maybeUpdate];
     } else {
-        NSLog(@"save error: %@", error);
-        NSLog(@"Unresolved error %@, %@, %@", error, [error userInfo],[error localizedDescription]);
+        [self _reset];
     }
-    
-    results = [self.managedObjectContext executeFetchRequest:request error:&err];
-    NSLog(@"got: %@", results);
-    
-//    if ([CYRImporter logsPath]) {
-//        [self.mainWindowController showWindow:self];
-//        [CYRImporter maybeUpdate];
-//    } else {
-//        [self _reset];
-//    }
 }
 
 - (IBAction)logout:(id)sender {
@@ -167,7 +139,7 @@
     
     if (!shouldFail && !error) {
         NSPersistentStoreCoordinator *coordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
-        NSURL *url = [applicationDocumentsDirectory URLByAppendingPathComponent:@"OSXCoreDataObjC.storedata"];
+        NSURL *url = [applicationDocumentsDirectory URLByAppendingPathComponent:@"db.sqlite"];
         if (![coordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:url options:nil error:&error]) {
             coordinator = nil;
         }

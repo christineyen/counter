@@ -29,20 +29,17 @@
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     
-    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Conversation"];
+    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Account"];
     
-//    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"handle != %@", @"cyenatwork"];
-//    request.predicate = predicate;
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"handle != %@", @"cyenatwork"];
+    request.predicate = predicate;
     
     CYRAppDelegate *delegate = [[NSApplication sharedApplication] delegate];
     NSManagedObjectContext *context = delegate.managedObjectContext;
-    NSLog(@"fetching from %@", context);
     NSError *err;
     self.results = [context executeFetchRequest:request error:&err];
     if (err) {
         NSLog(@"nope! %@", err);
-    } else {
-        NSLog(@"got results: %@", self.results);
     }
     [self.tableView reloadData];
 }
