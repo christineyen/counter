@@ -22,6 +22,9 @@
 		974AF13E183CB8BD00436B0E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 974AF13C183CB8BD00436B0E /* InfoPlist.strings */; };
 		974AF140183CB8BD00436B0E /* RevelioTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 974AF13F183CB8BD00436B0E /* RevelioTests.m */; };
 		97578C941A108E8A00B32008 /* Account.m in Sources */ = {isa = PBXBuildFile; fileRef = 97578C931A108E8A00B32008 /* Account.m */; };
+		97578C9F1A10938300B32008 /* CorePlot.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 97578C9C1A10936800B32008 /* CorePlot.framework */; };
+		97578CA21A1093C000B32008 /* CorePlot.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 97578C9C1A10936800B32008 /* CorePlot.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		97578CA41A1093DB00B32008 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 97578CA31A1093DB00B32008 /* QuartzCore.framework */; };
 		975D823A183F295C0057EA04 /* Conversation.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D8239183F295C0057EA04 /* Conversation.m */; };
 		975D8241183F2A100057EA04 /* CYRImporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D8240183F2A100057EA04 /* CYRImporter.m */; };
 		975D8254183F46240057EA04 /* CYRMainWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D8252183F46240057EA04 /* CYRMainWindowController.m */; };
@@ -36,7 +39,34 @@
 			remoteGlobalIDString = 974AF10E183CB8BC00436B0E;
 			remoteInfo = Revelio;
 		};
+		97578C9B1A10936800B32008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97578C951A10936800B32008 /* CorePlot.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8DC2EF5B0486A6940098B216;
+			remoteInfo = CorePlot;
+		};
+		97578C9D1A10936800B32008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97578C951A10936800B32008 /* CorePlot.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0730F600109492D800E95162;
+			remoteInfo = UnitTests;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		97578CA11A1093A700B32008 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				97578CA21A1093C000B32008 /* CorePlot.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		974AF10F183CB8BC00436B0E /* Revelio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Revelio.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -61,6 +91,8 @@
 		974AF13F183CB8BD00436B0E /* RevelioTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RevelioTests.m; sourceTree = "<group>"; };
 		97578C921A108E8A00B32008 /* Account.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Account.h; sourceTree = "<group>"; };
 		97578C931A108E8A00B32008 /* Account.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Account.m; sourceTree = "<group>"; };
+		97578C951A10936800B32008 /* CorePlot.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = CorePlot.xcodeproj; path = "../../../clones/core-plot/framework/CorePlot.xcodeproj"; sourceTree = "<group>"; };
+		97578CA31A1093DB00B32008 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		975D8238183F295C0057EA04 /* Conversation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Conversation.h; sourceTree = "<group>"; };
 		975D8239183F295C0057EA04 /* Conversation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Conversation.m; sourceTree = "<group>"; };
 		975D823F183F2A100057EA04 /* CYRImporter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CYRImporter.h; sourceTree = "<group>"; };
@@ -75,6 +107,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				97578CA41A1093DB00B32008 /* QuartzCore.framework in Frameworks */,
+				97578C9F1A10938300B32008 /* CorePlot.framework in Frameworks */,
 				9726E4501A1086870047E3D9 /* AppKit.framework in Frameworks */,
 				9726E3B41A1080B10047E3D9 /* CoreData.framework in Frameworks */,
 				974AF113183CB8BC00436B0E /* Cocoa.framework in Frameworks */,
@@ -115,6 +149,8 @@
 		974AF111183CB8BC00436B0E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				97578CA31A1093DB00B32008 /* QuartzCore.framework */,
+				97578C951A10936800B32008 /* CorePlot.xcodeproj */,
 				974AF112183CB8BC00436B0E /* Cocoa.framework */,
 				974AF134183CB8BC00436B0E /* XCTest.framework */,
 				974AF114183CB8BC00436B0E /* Other Frameworks */,
@@ -174,6 +210,15 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		97578C961A10936800B32008 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				97578C9C1A10936800B32008 /* CorePlot.framework */,
+				97578C9E1A10936800B32008 /* UnitTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		975D823E183F29610057EA04 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -210,6 +255,7 @@
 				974AF10B183CB8BC00436B0E /* Sources */,
 				974AF10C183CB8BC00436B0E /* Frameworks */,
 				974AF10D183CB8BC00436B0E /* Resources */,
+				97578CA11A1093A700B32008 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -271,6 +317,12 @@
 			mainGroup = 974AF106183CB8BC00436B0E;
 			productRefGroup = 974AF110183CB8BC00436B0E /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 97578C961A10936800B32008 /* Products */;
+					ProjectRef = 97578C951A10936800B32008 /* CorePlot.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				974AF10E183CB8BC00436B0E /* Revelio */,
@@ -278,6 +330,23 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		97578C9C1A10936800B32008 /* CorePlot.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = CorePlot.framework;
+			remoteRef = 97578C9B1A10936800B32008 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		97578C9E1A10936800B32008 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 97578C9D1A10936800B32008 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		974AF10D183CB8BC00436B0E /* Resources */ = {
