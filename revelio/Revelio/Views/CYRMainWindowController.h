@@ -9,5 +9,6 @@
 #import <Cocoa/Cocoa.h>
 
 @interface CYRMainWindowController : NSWindowController
+@property (weak, nonatomic) IBOutlet NSTableView *tableView;
 
 @end
