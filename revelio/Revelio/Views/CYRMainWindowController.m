@@ -205,17 +205,13 @@
 }
 
 - (NSNumber *)numberForPlot:(CPTPlot *)plot field:(NSUInteger)fieldEnum recordIndex:(NSUInteger)idx {
-    NSNumber *num;
     // the x-axis should be time and the y-axis should be the increasing count of conversations
     Account *account = [self.selectedBuddies firstObject];
-    Conversation *conv = [account.conversations allObjects][idx];
+    DataPoint *datapoint = account.conversationsByMessages[idx];
     if (fieldEnum == CPTScatterPlotFieldX) {
-        num = @([conv.timestamp timeIntervalSince1970]);
-    } else {
-        num = @([conv.size doubleValue] / 1024.0);
+        return datapoint.x;
     }
-    
-    return num;
+    return datapoint.y;
 }
 
 - (CPTLayer *)dataLabelForPlot:(CPTPlot *)plot recordIndex:(NSUInteger)idx {

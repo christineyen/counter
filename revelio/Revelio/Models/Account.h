@@ -13,9 +13,13 @@
 
 @interface Account : NSManagedObject
 
-@property (nonatomic, retain) NSString * handle;
-@property (nonatomic, retain) NSSet *conversations;
-@property (nonatomic, retain) NSSet *selfConversations;
+@property (strong, nonatomic) NSString * handle;
+@property (strong, nonatomic) NSSet *conversations;
+@property (strong, nonatomic) NSSet *selfConversations;
+
+@property (strong, nonatomic) NSArray *conversationsByCount;
+@property (strong, nonatomic) NSArray *conversationsByMessages;
+@property (strong, nonatomic) NSArray *conversationsBySize;
 
 - (Conversation *)lastConversation;
 
@@ -33,4 +37,9 @@
 - (void)addSelfConversations:(NSSet *)values;
 - (void)removeSelfConversations:(NSSet *)values;
 
+@end
+
+@interface DataPoint : NSObject
+@property (strong, nonatomic) NSNumber *x;
+@property (strong, nonatomic) NSNumber *y;
 @end
