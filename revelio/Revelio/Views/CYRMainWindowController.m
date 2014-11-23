@@ -14,12 +14,9 @@
 #import "Account.h"
 #import "Conversation.h"
 
-static NSString *const dataSourcePlot = @"Data Source Plot";
-
-@interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate, CPTPlotDataSource>
+@interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate, CPTPlotDataSource, CPTPlotSpaceDelegate>
 @property (strong, nonatomic) NSArray *results;
 @property (strong, nonatomic) NSArray *selectedBuddies;
-@property (strong, nonatomic) NSArray *contentArray;
 
 @property (strong, nonatomic) NSDateFormatter *dateFormatter;
 
@@ -39,37 +36,96 @@ static NSString *const dataSourcePlot = @"Data Source Plot";
     
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
-
-        // Add some initial data
-        NSMutableArray *contentArray = [NSMutableArray arrayWithCapacity:4];
-        for ( NSUInteger i = 0; i < 4; i++ ) {
-            NSNumber *x = @(1.0 + i * 0.05);
-            NSNumber *y = @(1.2 * arc4random() / (double)UINT32_MAX + 1.2);
-            [contentArray addObject:@{ @"x": x,
-                                       @"y": y }
-             ];
-        }
-    self.contentArray = contentArray;
+    
+    CPTXYGraph *graph = [[CPTXYGraph alloc] initWithFrame:CGRectZero]; //xScaleType:CPTScaleTypeLinear yScaleType:CPTScaleTypeLinear];
+    
+    // Setup scatter plot space
+    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)graph.defaultPlotSpace;
+    plotSpace.allowsUserInteraction = YES;
+    plotSpace.delegate              = self;
     
     
+    // If you make sure your dates are calculated at noon, you shouldn't have to
+    // worry about daylight savings. If you use midnight, you will have to adjust
+    // for daylight savings time.
+    NSTimeInterval oneDay = 24 * 60 * 60;
     
-    CPTXYGraph *graph = [[CPTXYGraph alloc] initWithFrame:CGRectZero xScaleType:CPTScaleTypeLinear yScaleType:CPTScaleTypeLinear];
-    graph.title = @"hi graph";
+    // Axes
+    // Label x axis with a fixed interval policy
+    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)graph.axisSet;
+    CPTXYAxis *x          = axisSet.xAxis;
+    x.labelingPolicy              = CPTAxisLabelingPolicyAutomatic;
+    x.majorIntervalLength         = CPTDecimalFromDouble(oneDay);
+    x.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);
+    x.minorTicksPerInterval       = 0;
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    dateFormatter.dateStyle = kCFDateFormatterShortStyle;
+    CPTTimeFormatter *timeFormatter = [[CPTTimeFormatter alloc] initWithDateFormatter:dateFormatter];
+    timeFormatter.referenceDate = [NSDate dateWithTimeIntervalSince1970:0];
+    x.labelFormatter            = timeFormatter;
+    x.labelRotation             = CPTFloat(M_PI_4);
+    x.labelOffset = 5.0;
     
+    x.title         = @"Date";
+    x.titleOffset   = 30.0;
+    x.titleLocation = CPTDecimalFromDouble(1.25);
+    
+    // Label y with an automatic label policy.
+    CPTXYAxis *y = axisSet.yAxis;
+    y.labelingPolicy              = CPTAxisLabelingPolicyAutomatic;
+    y.majorIntervalLength = CPTDecimalFromDouble(10);
+    y.minorTicksPerInterval       = 2;
+//    y.preferredNumberOfMajorTicks = 8;
+    y.labelOffset                 = 10.0;
+    
+    y.title         = @"Messages";
+    y.titleOffset   = 20.0;
+    y.titleLocation = CPTDecimalFromDouble(50.0);
+    
+    // Set axes
+    graph.axisSet.axes = @[x, y];
+    
+    
+    // Create a plot that uses the data source method
     CPTScatterPlot *plot = [[CPTScatterPlot alloc] init];
-    plot.identifier = dataSourcePlot;
     plot.dataSource = self;
+    plot.identifier = @"foo";
+    CPTMutableLineStyle *lineStyle = [plot.dataLineStyle mutableCopy];
+    lineStyle.lineWidth              = 1.0;
+    lineStyle.lineColor              = [CPTColor blackColor];
+    plot.dataLineStyle = lineStyle;
+    
     plot.interpolation = CPTScatterPlotInterpolationStepped;
     [graph addPlot:plot];
+    
+    // Add plot symbols
+    CPTMutableLineStyle *symbolLineStyle = [CPTMutableLineStyle lineStyle];
+    symbolLineStyle.lineColor = [CPTColor blackColor];
+    CPTPlotSymbol *plotSymbol = [CPTPlotSymbol ellipsePlotSymbol];
+    plotSymbol.fill               = [CPTFill fillWithColor:[CPTColor blueColor]];
+    plotSymbol.lineStyle          = symbolLineStyle;
+    plotSymbol.size               = CGSizeMake(5.0, 5.0);
+    plot.plotSymbol               = plotSymbol;
+    
+    // Set plot delegate, to know when symbols have been touched
+    // We will display an annotation when a symbol is touched
+    plot.delegate                        = self;
+    plot.plotSymbolMarginForHitDetection = 5.0;
+    
+    // Add legend
+    graph.legend                 = [CPTLegend legendWithGraph:graph];
+    graph.legend.textStyle       = x.titleTextStyle;
+    graph.legend.borderLineStyle = x.axisLineStyle;
+    graph.legend.cornerRadius    = 5.0;
+    graph.legend.swatchSize      = CGSizeMake(25.0, 25.0);
+    graph.legendAnchor           = CPTRectAnchorBottomRight;
+    graph.legendDisplacement     = CGPointMake(0.0, 12.0);
     
     // Put an area gradient under the plot above
     CPTColor *areaColor       = [CPTColor colorWithComponentRed:0.3 green:1.0 blue:0.3 alpha:0.1];
     CPTFill *areaGradientFill = [CPTFill fillWithColor:areaColor];
     plot.areaFill      = areaGradientFill;
-    plot.areaBaseValue = CPTDecimalFromDouble(1);
-    
-//    CPTXYPlotSpace *space = (CPTXYPlotSpace *)graph.defaultPlotSpace;
-//    [space scaleToFitPlots:@[plot]];
+    plot.areaBaseValue = CPTDecimalFromDouble(0);
     
     self.graphView.hostedGraph = graph;
 
@@ -116,18 +172,29 @@ static NSString *const dataSourcePlot = @"Data Source Plot";
     self.selectedBuddies = users;
     
     Account *account = [self.selectedBuddies firstObject];
-    CPTXYPlotSpace *space = (CPTXYPlotSpace *)self.graphView.hostedGraph.defaultPlotSpace;
-    space.xRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromDouble(0) length:CPTDecimalFromDouble([account.conversations count])];
-//    NSDate *minX = [account.conversations valueForKeyPath:@"@min.timestamp"];
-//    NSDate *maxX = [account.conversations valueForKeyPath:@"@max.timestamp"];
-//    NSLog(@"minX: %f, maxX: %@", [minX timeIntervalSince1970], maxX);
-//    space.xRange = [CPTPlotRange plotRangeWithLocation:[minX decimalValue] length:[maxX decimalValue]];
-    
-//    NSNumber *minY = [account.conversations valueForKeyPath:@"@min.size"];
-//    NSNumber *maxY = [account.conversations valueForKeyPath:@"@max.size"];
-//    space.yRange = [CPTPlotRange plotRangeWithLocation:[minY decimalValue] length:[maxY decimalValue]];
+    CPTPlot *plot = [self.graphView.hostedGraph plotAtIndex:0];
+    plot.identifier = account.handle;
+
     
     [self.graphView.hostedGraph reloadData];
+    
+    // Auto scale the plot space to fit the plot data
+    // Extend the ranges by 30% for neatness
+    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)self.graphView.hostedGraph.defaultPlotSpace;
+    [plotSpace scaleToFitPlots:@[plot]];
+    CPTMutablePlotRange *xRange = [plotSpace.xRange mutableCopy];
+    NSDecimal earliestDate = xRange.location;
+    CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
+    [xRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
+    [yRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
+    plotSpace.xRange = xRange;
+    plotSpace.yRange = yRange;
+    
+    // Update to have Y-Axis cross X-Axis at earliest chat date
+    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.graphView.hostedGraph.axisSet;
+    CPTXYAxis *yAxis = axisSet.yAxis;
+    yAxis.orthogonalCoordinateDecimal = earliestDate;
+    self.graphView.hostedGraph.axisSet.axes = @[ axisSet.xAxis, yAxis ];
 }
 
 #pragma mark - CPTPlotDataSource
@@ -143,10 +210,9 @@ static NSString *const dataSourcePlot = @"Data Source Plot";
     Account *account = [self.selectedBuddies firstObject];
     Conversation *conv = [account.conversations allObjects][idx];
     if (fieldEnum == CPTScatterPlotFieldX) {
-//        num = @([conv.timestamp timeIntervalSince1970]);
-        num = @(idx);
+        num = @([conv.timestamp timeIntervalSince1970]);
     } else {
-        num = @([conv.size doubleValue] / 50000.0);
+        num = @([conv.size doubleValue] / 1024.0);
     }
     
     return num;
@@ -154,6 +220,15 @@ static NSString *const dataSourcePlot = @"Data Source Plot";
 
 - (CPTLayer *)dataLabelForPlot:(CPTPlot *)plot recordIndex:(NSUInteger)idx {
     return nil;
+}
+
+#pragma mark - CPTPlotDelegate methods
+-(void)scatterPlot:(CPTScatterPlot *)plot plotSymbolWasSelectedAtRecordIndex:(NSUInteger)idx {
+    NSLog(@"touch symbol at idx %lu in  %@", idx, plot);
+}
+
+-(void)scatterPlotDataLineWasSelected:(CPTScatterPlot *)plot {
+    NSLog(@"touched plot %@", plot);
 }
 
 #pragma mark - Private methods
