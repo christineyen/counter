@@ -110,9 +110,11 @@ static NSString *const kLastImportedKey = @"LastImported";
 
         CYRImporter *importer = [[self alloc] initWithPath:[theURL path] attributes:attributes];
         NSAssert([importer.conversation.size integerValue] > 0, @"Ensure that the conversation.size > 0");
-        NSLog(@"imported %@ bytes at %@", importer.conversation.size, [theURL path]);
+//        NSLog(@"imported %@ bytes at %@", importer.conversation.size, [theURL path]);
         
-        date = importer.conversation.timestamp;
+        if (date == nil || ([date timeIntervalSince1970] < [importer.conversation.timestamp timeIntervalSince1970])) {
+            date = importer.conversation.timestamp;
+        }
     }
     NSError *ctxErr;
     [self.context save:&ctxErr];

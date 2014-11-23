@@ -14,14 +14,26 @@
 #import "Account.h"
 #import "Conversation.h"
 
+typedef enum {
+    kCount,
+    kMessages,
+    kSize
+} CumulativeMode;
+
 @interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate, CPTPlotDataSource, CPTPlotSpaceDelegate>
 @property (strong, nonatomic) NSArray *results;
 @property (strong, nonatomic) NSOrderedSet *selectedBuddies;
 
 @property (strong, nonatomic) NSDateFormatter *dateFormatter;
 @property (strong, nonatomic) CPTGraph *graph;
+@property (nonatomic) CumulativeMode mode;
+
+@property (weak) IBOutlet NSSegmentedControl *segmentedControl;
+
+- (IBAction)clickedSegmentedControl:(id)sender;
 
 - (void)_fetchBuddies:(void(^)(void))complete;
+- (void)_reloadAndRescaleAxes;
 - (CPTPlot *)_buildPlot:(NSString *)identifier;
 - (CPTColor *)_colorForIdentifier:(NSString *)identifier;
 @end
@@ -44,6 +56,8 @@ static CGFloat kLineWidthSelected = 3.0;
     self.tableView.dataSource = self;
     
     self.graphView.hostedGraph = self.graph;
+    [self.segmentedControl setTarget:self];
+    [self.segmentedControl setAction:@selector(clickedSegmentedControl:)];
 
     [self _fetchBuddies:^{
         [self.tableView reloadData];
@@ -158,25 +172,13 @@ static CGFloat kLineWidthSelected = 3.0;
     
     // Set new selection
     self.selectedBuddies = newSelection;
-    [self.graph reloadData];
-    
-    // Auto scale the plot space to fit the plot data
-    // Extend the ranges by 30% for neatness
-    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)self.graph.defaultPlotSpace;
-    [plotSpace scaleToFitPlots:[self.graph allPlots]];
-    CPTMutablePlotRange *xRange = [plotSpace.xRange mutableCopy];
-    NSDecimal earliestDate = xRange.location;
-    CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
-    [xRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
-    [yRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
-    plotSpace.xRange = xRange;
-    plotSpace.yRange = yRange;
-    
-    // Update to have Y-Axis cross X-Axis at earliest chat date
-    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.graphView.hostedGraph.axisSet;
-    CPTXYAxis *yAxis = axisSet.yAxis;
-    yAxis.orthogonalCoordinateDecimal = earliestDate;
-    self.graphView.hostedGraph.axisSet.axes = @[ axisSet.xAxis, yAxis ];
+    [self _reloadAndRescaleAxes];
+}
+
+- (void)tableView:(NSTableView *)tableView sortDescriptorsDidChange:(NSArray *)oldDescriptors {
+    [tableView selec]
+    self.results = [self.results sortedArrayUsingDescriptors:[tableView sortDescriptors]];
+    [tableView reloadData];
 }
 
 #pragma mark - CPTPlotDataSource
@@ -193,7 +195,22 @@ static CGFloat kLineWidthSelected = 3.0;
         return [account.handle isEqualToString:(NSString *)plot.identifier];
     }];
     Account *account = [self.selectedBuddies objectAtIndex:accIdx];
-    DataPoint *datapoint = account.conversationsByMessages[idx];
+    
+    DataPoint *datapoint;
+    switch (self.mode) {
+        case 0:
+            datapoint = account.conversationsByCount[idx];
+            break;
+        case 1:
+            datapoint = account.conversationsByMessages[idx];
+            break;
+        case 2:
+            datapoint = account.conversationsBySize[idx];
+            break;
+        default:
+            NSLog(@"wat? %@", @(self.mode));
+            break;
+    }
     if (fieldEnum == CPTScatterPlotFieldX) {
         return datapoint.x;
     }
@@ -226,6 +243,17 @@ static CGFloat kLineWidthSelected = 3.0;
     }];
 }
 
+#pragma mark - CYRMainWindowController methods
+
+- (IBAction)clickedSegmentedControl:(id)sender {
+    NSInteger idx = [self.segmentedControl selectedSegment];
+    if (idx == self.mode) {
+        return;
+    }
+    self.mode = (int)idx;
+    [self _reloadAndRescaleAxes];
+}
+
 #pragma mark - Private methods
 - (void)_fetchBuddies:(void(^)(void))complete {
     NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Account"];
@@ -243,6 +271,28 @@ static CGFloat kLineWidthSelected = 3.0;
     } else {
         NSLog(@"Nope! _fetchBuddies got error: %@", err);
     }
+}
+
+- (void)_reloadAndRescaleAxes {
+    [self.graph reloadData];
+    
+    // Auto scale the plot space to fit the plot data
+    // Extend the ranges by 30% for neatness
+    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)self.graph.defaultPlotSpace;
+    [plotSpace scaleToFitPlots:[self.graph allPlots]];
+    CPTMutablePlotRange *xRange = [plotSpace.xRange mutableCopy];
+    NSDecimal earliestDate = xRange.location;
+    CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
+    [xRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
+    [yRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
+    plotSpace.xRange = xRange;
+    plotSpace.yRange = yRange;
+    
+    // Update to have Y-Axis cross X-Axis at earliest chat date
+    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.graphView.hostedGraph.axisSet;
+    CPTXYAxis *yAxis = axisSet.yAxis;
+    yAxis.orthogonalCoordinateDecimal = earliestDate;
+    self.graphView.hostedGraph.axisSet.axes = @[ axisSet.xAxis, yAxis ];
 }
 
 - (CPTPlot *)_buildPlot:(NSString *)identifier {
