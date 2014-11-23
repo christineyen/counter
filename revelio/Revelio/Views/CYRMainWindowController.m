@@ -16,14 +16,20 @@
 
 @interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate, CPTPlotDataSource, CPTPlotSpaceDelegate>
 @property (strong, nonatomic) NSArray *results;
-@property (strong, nonatomic) NSArray *selectedBuddies;
+@property (strong, nonatomic) NSOrderedSet *selectedBuddies;
 
 @property (strong, nonatomic) NSDateFormatter *dateFormatter;
+@property (strong, nonatomic) CPTGraph *graph;
 
 - (void)_fetchBuddies:(void(^)(void))complete;
+- (CPTPlot *)_buildPlot:(NSString *)identifier;
+- (CPTColor *)_colorForIdentifier:(NSString *)identifier;
 @end
 
 @implementation CYRMainWindowController
+
+static CGFloat kLineWidthDefault = 1.0;
+static CGFloat kLineWidthSelected = 3.0;
 
 - (id)initWithWindow:(NSWindow *)window {
     if (self = [super initWithWindow:window]) {
@@ -37,99 +43,7 @@
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     
-    CPTXYGraph *graph = [[CPTXYGraph alloc] initWithFrame:CGRectZero]; //xScaleType:CPTScaleTypeLinear yScaleType:CPTScaleTypeLinear];
-    
-    // Setup scatter plot space
-    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)graph.defaultPlotSpace;
-    plotSpace.allowsUserInteraction = YES;
-    plotSpace.delegate              = self;
-    
-    
-    // If you make sure your dates are calculated at noon, you shouldn't have to
-    // worry about daylight savings. If you use midnight, you will have to adjust
-    // for daylight savings time.
-    NSTimeInterval oneDay = 24 * 60 * 60;
-    
-    // Axes
-    // Label x axis with a fixed interval policy
-    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)graph.axisSet;
-    CPTXYAxis *x          = axisSet.xAxis;
-    x.labelingPolicy              = CPTAxisLabelingPolicyAutomatic;
-    x.majorIntervalLength         = CPTDecimalFromDouble(oneDay);
-    x.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);
-    x.minorTicksPerInterval       = 0;
-    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-    dateFormatter.dateStyle = kCFDateFormatterShortStyle;
-    CPTTimeFormatter *timeFormatter = [[CPTTimeFormatter alloc] initWithDateFormatter:dateFormatter];
-    timeFormatter.referenceDate = [NSDate dateWithTimeIntervalSince1970:0];
-    x.labelFormatter            = timeFormatter;
-    x.labelRotation             = CPTFloat(M_PI_4);
-    x.labelOffset = 5.0;
-    
-    x.title         = @"Date";
-    x.titleOffset   = 30.0;
-    x.titleLocation = CPTDecimalFromDouble(1.25);
-    
-    // Label y with an automatic label policy.
-    CPTXYAxis *y = axisSet.yAxis;
-    y.labelingPolicy              = CPTAxisLabelingPolicyAutomatic;
-    y.majorIntervalLength = CPTDecimalFromDouble(10);
-    y.minorTicksPerInterval       = 2;
-//    y.preferredNumberOfMajorTicks = 8;
-    y.labelOffset                 = 10.0;
-    
-    y.title         = @"Messages";
-    y.titleOffset   = 20.0;
-    y.titleLocation = CPTDecimalFromDouble(50.0);
-    
-    // Set axes
-    graph.axisSet.axes = @[x, y];
-    
-    
-    // Create a plot that uses the data source method
-    CPTScatterPlot *plot = [[CPTScatterPlot alloc] init];
-    plot.dataSource = self;
-    plot.identifier = @"foo";
-    CPTMutableLineStyle *lineStyle = [plot.dataLineStyle mutableCopy];
-    lineStyle.lineWidth              = 1.0;
-    lineStyle.lineColor              = [CPTColor blackColor];
-    plot.dataLineStyle = lineStyle;
-    
-    plot.interpolation = CPTScatterPlotInterpolationStepped;
-    [graph addPlot:plot];
-    
-    // Add plot symbols
-    CPTMutableLineStyle *symbolLineStyle = [CPTMutableLineStyle lineStyle];
-    symbolLineStyle.lineColor = [CPTColor blackColor];
-    CPTPlotSymbol *plotSymbol = [CPTPlotSymbol ellipsePlotSymbol];
-    plotSymbol.fill               = [CPTFill fillWithColor:[CPTColor blueColor]];
-    plotSymbol.lineStyle          = symbolLineStyle;
-    plotSymbol.size               = CGSizeMake(5.0, 5.0);
-    plot.plotSymbol               = plotSymbol;
-    
-    // Set plot delegate, to know when symbols have been touched
-    // We will display an annotation when a symbol is touched
-    plot.delegate                        = self;
-    plot.plotSymbolMarginForHitDetection = 5.0;
-    
-    // Add legend
-    graph.legend                 = [CPTLegend legendWithGraph:graph];
-    graph.legend.textStyle       = x.titleTextStyle;
-    graph.legend.borderLineStyle = x.axisLineStyle;
-    graph.legend.cornerRadius    = 5.0;
-    graph.legend.swatchSize      = CGSizeMake(25.0, 25.0);
-    graph.legendAnchor           = CPTRectAnchorBottomRight;
-    graph.legendDisplacement     = CGPointMake(0.0, 12.0);
-    
-    // Put an area gradient under the plot above
-    CPTColor *areaColor       = [CPTColor colorWithComponentRed:0.3 green:1.0 blue:0.3 alpha:0.1];
-    CPTFill *areaGradientFill = [CPTFill fillWithColor:areaColor];
-    plot.areaFill      = areaGradientFill;
-    plot.areaBaseValue = CPTDecimalFromDouble(0);
-    
-    self.graphView.hostedGraph = graph;
-
-    [plot reloadData];
+    self.graphView.hostedGraph = self.graph;
 
     [self _fetchBuddies:^{
         [self.tableView reloadData];
@@ -144,6 +58,59 @@
         [_dateFormatter setTimeStyle:NSDateFormatterNoStyle];
     }
     return _dateFormatter;
+}
+
+- (CPTGraph *)graph {
+    if (_graph == nil) {
+        _graph = [[CPTXYGraph alloc] initWithFrame:CGRectZero]; //xScaleType:CPTScaleTypeLinear yScaleType:CPTScaleTypeLinear];
+        // Setup scatter plot space
+        CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)_graph.defaultPlotSpace;
+        plotSpace.allowsUserInteraction = YES;
+        plotSpace.delegate              = self;
+        
+        // Axes
+        CPTXYAxisSet *axisSet         = (CPTXYAxisSet *)_graph.axisSet;
+        CPTXYAxis *x                  = axisSet.xAxis;
+        x.title                       = @"Date";
+        x.labelingPolicy              = CPTAxisLabelingPolicyAutomatic;
+        x.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);
+        x.minorTicksPerInterval       = 0;
+        
+        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+        dateFormatter.dateStyle = kCFDateFormatterShortStyle;
+        CPTTimeFormatter *timeFormatter = [[CPTTimeFormatter alloc] initWithDateFormatter:dateFormatter];
+        timeFormatter.referenceDate = [NSDate dateWithTimeIntervalSince1970:0];
+        x.labelFormatter            = timeFormatter;
+        x.labelRotation             = CPTFloat(M_PI_4);
+        x.labelOffset               = 5.0;
+        x.titleOffset               = 20.0;
+        x.titleLocation             = CPTDecimalFromDouble(1.25);
+        
+        CPTXYAxis *y                = axisSet.yAxis;
+        y.title                     = @"FOOOOO";
+        y.labelingPolicy            = CPTAxisLabelingPolicyAutomatic;
+        y.majorIntervalLength       = CPTDecimalFromDouble(10);
+        y.minorTicksPerInterval     = 2;
+        y.labelOffset               = 10.0;
+        y.titleOffset               = 20.0;
+        y.titleLocation             = CPTDecimalFromDouble(50.0);
+        
+        // Set axes
+        _graph.axisSet.axes = @[x, y];
+        
+        // Add legend
+        CPTLegend *legend      = [CPTLegend legendWithGraph:_graph];
+        legend.textStyle       = x.titleTextStyle;
+        legend.borderLineStyle = x.axisLineStyle;
+        legend.cornerRadius    = 5.0;
+        legend.numberOfColumns = 1;
+        
+        _graph.legend = legend;
+        _graph.legendAnchor           = CPTRectAnchorTopRight;
+        _graph.legendDisplacement     = CGPointMake(-5.0, -12.0);
+    }
+    return _graph;
+        
 }
 
 #pragma mark - NSTableViewDataSource methods
@@ -164,24 +131,39 @@
 
 #pragma mark - NSTableViewDelegate methods
 - (void)tableViewSelectionDidChange:(NSNotification *)notification {
+    // Identify selected users
     NSIndexSet *indexSet = [self.tableView selectedRowIndexes];
-    NSMutableArray *users = [NSMutableArray arrayWithCapacity:[indexSet count]];
+    NSMutableOrderedSet *newSelection = [NSMutableOrderedSet orderedSetWithCapacity:[indexSet count]];
     [indexSet enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
-        [users addObject:self.results[idx]];
+        [newSelection addObject:self.results[idx]];
     }];
-    self.selectedBuddies = users;
     
-    Account *account = [self.selectedBuddies firstObject];
-    CPTPlot *plot = [self.graphView.hostedGraph plotAtIndex:0];
-    plot.identifier = account.handle;
+    // Identify Accounts to remove
+    NSMutableOrderedSet *oldUsers = [NSMutableOrderedSet orderedSetWithOrderedSet:self.selectedBuddies];
+    [oldUsers minusOrderedSet:newSelection];
+    // Identify Accounts to add
+    NSMutableOrderedSet *newUsers = [NSMutableOrderedSet orderedSetWithOrderedSet:newSelection];
+    [newUsers minusOrderedSet:self.selectedBuddies];
 
+    [oldUsers enumerateObjectsUsingBlock:^(Account *account, NSUInteger idx, BOOL *stop) {
+        CPTPlot *plot = [self.graph plotWithIdentifier:account.handle];
+        [self.graph removePlot:plot];
+        [self.graph.legend removePlot:plot];
+    }];
+    [newUsers enumerateObjectsUsingBlock:^(Account *account, NSUInteger idx, BOOL *stop) {
+        CPTPlot *plot = [self _buildPlot:account.handle];
+        [self.graph addPlot:plot];
+        [self.graph.legend addPlot:plot];
+    }];
     
-    [self.graphView.hostedGraph reloadData];
+    // Set new selection
+    self.selectedBuddies = newSelection;
+    [self.graph reloadData];
     
     // Auto scale the plot space to fit the plot data
     // Extend the ranges by 30% for neatness
-    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)self.graphView.hostedGraph.defaultPlotSpace;
-    [plotSpace scaleToFitPlots:@[plot]];
+    CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)self.graph.defaultPlotSpace;
+    [plotSpace scaleToFitPlots:[self.graph allPlots]];
     CPTMutablePlotRange *xRange = [plotSpace.xRange mutableCopy];
     NSDecimal earliestDate = xRange.location;
     CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
@@ -199,14 +181,18 @@
 
 #pragma mark - CPTPlotDataSource
 - (NSUInteger)numberOfRecordsForPlot:(CPTPlot *)plot {
-    // hm? we actually want a bunch of time series laid on top of each other.
-    Account *account = [self.selectedBuddies firstObject];
+    NSUInteger idx = [self.selectedBuddies indexOfObjectPassingTest:^BOOL(Account *account, NSUInteger idx, BOOL *stop) {
+        return [account.handle isEqualToString:(NSString *)plot.identifier];
+    }];
+    Account *account = [self.selectedBuddies objectAtIndex:idx];
     return [account.conversations count];
 }
 
 - (NSNumber *)numberForPlot:(CPTPlot *)plot field:(NSUInteger)fieldEnum recordIndex:(NSUInteger)idx {
-    // the x-axis should be time and the y-axis should be the increasing count of conversations
-    Account *account = [self.selectedBuddies firstObject];
+    NSUInteger accIdx = [self.selectedBuddies indexOfObjectPassingTest:^BOOL(Account *account, NSUInteger idx, BOOL *stop) {
+        return [account.handle isEqualToString:(NSString *)plot.identifier];
+    }];
+    Account *account = [self.selectedBuddies objectAtIndex:accIdx];
     DataPoint *datapoint = account.conversationsByMessages[idx];
     if (fieldEnum == CPTScatterPlotFieldX) {
         return datapoint.x;
@@ -224,7 +210,20 @@
 }
 
 -(void)scatterPlotDataLineWasSelected:(CPTScatterPlot *)plot {
-    NSLog(@"touched plot %@", plot);
+    [[self.graph allPlots] enumerateObjectsUsingBlock:^(CPTScatterPlot *gPlot, NSUInteger idx, BOOL *stop) {
+        CPTMutableLineStyle *lineStyle = [gPlot.dataLineStyle mutableCopy];
+        CGFloat oldWidth = lineStyle.lineWidth;
+        if (plot == gPlot) {
+            lineStyle.lineWidth = kLineWidthSelected;
+        } else {
+            lineStyle.lineWidth = kLineWidthDefault;
+        }
+        if (oldWidth == lineStyle.lineWidth) {
+            return;
+        }
+        gPlot.dataLineStyle = lineStyle;
+        [gPlot reloadPlotSymbols];
+    }];
 }
 
 #pragma mark - Private methods
@@ -244,6 +243,48 @@
     } else {
         NSLog(@"Nope! _fetchBuddies got error: %@", err);
     }
+}
+
+- (CPTPlot *)_buildPlot:(NSString *)identifier {
+    // Create a plot that uses the data source method
+    CPTScatterPlot *plot = [[CPTScatterPlot alloc] init];
+    plot.identifier = identifier;
+    plot.dataSource = self;
+    plot.delegate   = self;
+    plot.plotSymbolMarginForHitDetection = 5.0;
+    
+    // Set line style
+    CPTColor *color                  = [self _colorForIdentifier:identifier];
+    CPTColor *fillColor              = [color colorWithAlphaComponent:0.25];
+    CPTMutableLineStyle *lineStyle   = [plot.dataLineStyle mutableCopy];
+    lineStyle.lineWidth              = kLineWidthDefault;
+    lineStyle.lineColor              = color;
+    plot.dataLineStyle = lineStyle;
+    plot.interpolation = CPTScatterPlotInterpolationStepped;
+    
+    // Add plot symbols
+    CPTMutableLineStyle *symbolLineStyle = [CPTMutableLineStyle lineStyle];
+    symbolLineStyle.lineColor     = color;
+    CPTPlotSymbol *plotSymbol     = [CPTPlotSymbol ellipsePlotSymbol];
+    plotSymbol.fill               = [CPTFill fillWithColor:fillColor];
+    plotSymbol.lineStyle          = symbolLineStyle;
+    plotSymbol.size               = CGSizeMake(5.0, 5.0);
+    plot.plotSymbol               = plotSymbol;
+    
+    // Put an area gradient under the plot above
+    CPTFill *areaGradientFill = [CPTFill fillWithColor:fillColor];
+    plot.areaFill      = areaGradientFill;
+    plot.areaBaseValue = CPTDecimalFromDouble(0);
+
+    return plot;
+}
+
+- (CPTColor *)_colorForIdentifier:(NSString *)identifier {
+    NSUInteger hash = [identifier hash];
+    NSUInteger r = (hash & 0xFF0000) >> 16;
+    NSUInteger g = (hash & 0x00FF00) >> 8;
+    NSUInteger b = hash & 0x0000FF;
+    return [CPTColor colorWithComponentRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:1];
 }
 
 @end
