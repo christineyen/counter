@@ -33,6 +33,7 @@ typedef enum {
 - (IBAction)clickedSegmentedControl:(id)sender;
 
 - (void)_fetchBuddies:(void(^)(void))complete;
+- (NSString *)_quantityYAxisTitle;
 - (void)_reloadAndRescaleAxes;
 - (CPTPlot *)_buildPlot:(NSString *)identifier;
 - (CPTColor *)_colorForIdentifier:(NSString *)identifier;
@@ -89,36 +90,34 @@ static CGFloat kLineWidthSelected = 3.0;
         x.labelingPolicy              = CPTAxisLabelingPolicyAutomatic;
         x.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);
         x.minorTicksPerInterval       = 0;
-        
+
         NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
         dateFormatter.dateStyle = kCFDateFormatterShortStyle;
         CPTTimeFormatter *timeFormatter = [[CPTTimeFormatter alloc] initWithDateFormatter:dateFormatter];
         timeFormatter.referenceDate = [NSDate dateWithTimeIntervalSince1970:0];
         x.labelFormatter            = timeFormatter;
-        x.labelRotation             = CPTFloat(M_PI_4);
-        x.labelOffset               = 5.0;
-        x.titleOffset               = 20.0;
-        x.titleLocation             = CPTDecimalFromDouble(1.25);
-        
+        x.labelRotation             = CPTFloat(M_PI_4/2);
+        x.labelOffset               = 0.0;
+        x.title                     = @"Date of conversation";
+        x.titleOffset               = 30.0;
+
         CPTXYAxis *y                = axisSet.yAxis;
-        y.title                     = @"FOOOOO";
         y.labelingPolicy            = CPTAxisLabelingPolicyAutomatic;
         y.majorIntervalLength       = CPTDecimalFromDouble(10);
         y.minorTicksPerInterval     = 2;
         y.labelOffset               = 10.0;
-        y.titleOffset               = 20.0;
-        y.titleLocation             = CPTDecimalFromDouble(50.0);
-        
+        y.titleOffset               = 50.0;
+
         // Set axes
         _graph.axisSet.axes = @[x, y];
-        
+
         // Add legend
         CPTLegend *legend      = [CPTLegend legendWithGraph:_graph];
         legend.textStyle       = x.titleTextStyle;
         legend.borderLineStyle = x.axisLineStyle;
         legend.cornerRadius    = 5.0;
         legend.numberOfColumns = 1;
-        
+
         _graph.legend = legend;
         _graph.legendAnchor           = CPTRectAnchorTopRight;
         _graph.legendDisplacement     = CGPointMake(-5.0, -12.0);
@@ -176,7 +175,7 @@ static CGFloat kLineWidthSelected = 3.0;
 }
 
 - (void)tableView:(NSTableView *)tableView sortDescriptorsDidChange:(NSArray *)oldDescriptors {
-    [tableView selec]
+
     self.results = [self.results sortedArrayUsingDescriptors:[tableView sortDescriptors]];
     [tableView reloadData];
 }
@@ -273,6 +272,15 @@ static CGFloat kLineWidthSelected = 3.0;
     }
 }
 
+- (NSString *)_quantityYAxisTitle {
+    if (self.mode == kCount) {
+        return @"Number of conversation over time";
+    } else if (self.mode == kMessages) {
+        return @"Number of messages over time";
+    }
+    return @"Number of bytes on disk over time";
+}
+
 - (void)_reloadAndRescaleAxes {
     [self.graph reloadData];
     
@@ -290,9 +298,14 @@ static CGFloat kLineWidthSelected = 3.0;
     
     // Update to have Y-Axis cross X-Axis at earliest chat date
     CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.graphView.hostedGraph.axisSet;
+    CPTXYAxis *xAxis = axisSet.xAxis;
+    xAxis.titleLocation = xRange.midPoint;
+    xAxis.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);; //// probably doesn't have to go here
     CPTXYAxis *yAxis = axisSet.yAxis;
+    yAxis.title = [self _quantityYAxisTitle];
+    yAxis.titleLocation = yRange.midPoint;
     yAxis.orthogonalCoordinateDecimal = earliestDate;
-    self.graphView.hostedGraph.axisSet.axes = @[ axisSet.xAxis, yAxis ];
+    self.graphView.hostedGraph.axisSet.axes = @[ xAxis, yAxis ];
 }
 
 - (CPTPlot *)_buildPlot:(NSString *)identifier {

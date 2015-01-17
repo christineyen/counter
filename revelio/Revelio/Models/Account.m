@@ -74,7 +74,7 @@
 
             [array addObject:point];
         }];
-        _conversationsByMessages = array;
+        _conversationsBySize = array;
     }
     return _conversationsBySize;
 }
