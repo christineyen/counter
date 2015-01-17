@@ -20,7 +20,7 @@ typedef enum {
     kSize
 } CumulativeMode;
 
-@interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate, CPTPlotDataSource, CPTPlotSpaceDelegate>
+@interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate, NSTabViewDelegate, CPTPlotDataSource, CPTPlotSpaceDelegate>
 @property (strong, nonatomic) NSArray *results;
 @property (strong, nonatomic) NSOrderedSet *selectedBuddies;
 
@@ -28,9 +28,9 @@ typedef enum {
 @property (strong, nonatomic) CPTGraph *graph;
 @property (nonatomic) CumulativeMode mode;
 
-@property (weak) IBOutlet NSSegmentedControl *segmentedControl;
+@property (weak) IBOutlet NSSegmentedControl *quantitySegmentedControl;
 
-- (IBAction)clickedSegmentedControl:(id)sender;
+- (IBAction)clickedQuantitySegmentedControl:(id)sender;
 
 - (void)_fetchBuddies:(void(^)(void))complete;
 - (NSString *)_quantityYAxisTitle;
@@ -56,9 +56,9 @@ static CGFloat kLineWidthSelected = 3.0;
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     
-    self.graphView.hostedGraph = self.graph;
-    [self.segmentedControl setTarget:self];
-    [self.segmentedControl setAction:@selector(clickedSegmentedControl:)];
+    self.quantityGraphView.hostedGraph = self.graph;
+    [self.quantitySegmentedControl setTarget:self];
+    [self.quantitySegmentedControl setAction:@selector(clickedQuantitySegmentedControl:)];
 
     [self _fetchBuddies:^{
         [self.tableView reloadData];
@@ -126,6 +126,12 @@ static CGFloat kLineWidthSelected = 3.0;
         
 }
 
+#pragma mark - NSTabViewDelegate methods
+- (void)tabView:(NSTabView *)tabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem {
+    // TODO: be intelligent about not updating graphs on all tabs, all the time.
+    // update graph on new tab
+}
+
 #pragma mark - NSTableViewDataSource methods
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView {
     return [self.results count];
@@ -175,7 +181,6 @@ static CGFloat kLineWidthSelected = 3.0;
 }
 
 - (void)tableView:(NSTableView *)tableView sortDescriptorsDidChange:(NSArray *)oldDescriptors {
-
     self.results = [self.results sortedArrayUsingDescriptors:[tableView sortDescriptors]];
     [tableView reloadData];
 }
@@ -244,8 +249,8 @@ static CGFloat kLineWidthSelected = 3.0;
 
 #pragma mark - CYRMainWindowController methods
 
-- (IBAction)clickedSegmentedControl:(id)sender {
-    NSInteger idx = [self.segmentedControl selectedSegment];
+- (IBAction)clickedQuantitySegmentedControl:(id)sender {
+    NSInteger idx = [self.quantitySegmentedControl selectedSegment];
     if (idx == self.mode) {
         return;
     }
@@ -297,7 +302,7 @@ static CGFloat kLineWidthSelected = 3.0;
     plotSpace.yRange = yRange;
     
     // Update to have Y-Axis cross X-Axis at earliest chat date
-    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.graphView.hostedGraph.axisSet;
+    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.quantityGraphView.hostedGraph.axisSet;
     CPTXYAxis *xAxis = axisSet.xAxis;
     xAxis.titleLocation = xRange.midPoint;
     xAxis.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);; //// probably doesn't have to go here
@@ -305,7 +310,7 @@ static CGFloat kLineWidthSelected = 3.0;
     yAxis.title = [self _quantityYAxisTitle];
     yAxis.titleLocation = yRange.midPoint;
     yAxis.orthogonalCoordinateDecimal = earliestDate;
-    self.graphView.hostedGraph.axisSet.axes = @[ xAxis, yAxis ];
+    self.quantityGraphView.hostedGraph.axisSet.axes = @[ xAxis, yAxis ];
 }
 
 - (CPTPlot *)_buildPlot:(NSString *)identifier {
