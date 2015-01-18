@@ -14,4 +14,5 @@
 @property (weak, nonatomic) IBOutlet CPTGraphHostingView *quantityGraphView;
 @property (weak, nonatomic) IBOutlet CPTGraphHostingView *skewGraphView;
 
+- (void)clear;
 @end

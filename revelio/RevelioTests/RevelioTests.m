@@ -9,17 +9,17 @@
 #import <XCTest/XCTest.h>
 
 #import "CYRImporter.h"
-#import "User.h"
+#import "Account.h"
 #import "Conversation.h"
 
 @interface CYRImporter (Tests)
-@property (strong, nonatomic) User *user;
-@property (strong, nonatomic) User *buddy;
+@property (strong, nonatomic) Account *user;
+@property (strong, nonatomic) Account *buddy;
 @property (strong, nonatomic) Conversation *conversation;
 @property (strong, nonatomic) NSArray *messages;
 
 - (id)initWithPath:(NSString *)path attributes:(NSDictionary *)attributes;
-- (id)initWithXMLDocument:(NSString *)doc;
+- (void)parseDocument:(NSString *)documentContents;
 @end
 
 @interface RevelioTests : XCTestCase
@@ -52,6 +52,9 @@ static NSString *const xml = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
 - (void)setUp
 {
     [super setUp];
+    [CYRImporter clearState];
+    [[NSUserDefaults standardUserDefaults] setObject:@"cyenatwork" forKey:@"CurrentHandle"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
     // Put setup code here. This method is called before the invocation of each test method in the class.
 }
 
@@ -62,14 +65,17 @@ static NSString *const xml = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
 }
 
 - (void)testParse {
-    CYRImporter *importer = [[CYRImporter alloc] initWithXMLDocument:xml];
-    User *user = (User *)importer.user;
+    CYRImporter *importer = [[CYRImporter alloc] init];
+    [importer parseDocument:xml];
+    Account *user = (Account *)importer.user;
     XCTAssertEqualObjects(user.handle, @"cyenatwork");
-    User *buddy = (User *)importer.buddy;
+    Account *buddy = (Account *)importer.buddy;
     XCTAssertEqualObjects(buddy.handle, @"sjw0n");
     XCTAssertEqual(9, [importer.messages count], @"incorrect: %@", importer.messages);
     NSInteger expectedTotal = [importer.conversation.msgsUser integerValue] + [importer.conversation.msgsBuddy integerValue];
     XCTAssertEqual(9, expectedTotal);
+    XCTAssertEqual(4, [importer.conversation.msgsUser integerValue]);
+    XCTAssertEqual(5, [importer.conversation.msgsBuddy integerValue]);
     XCTAssertFalse([importer.conversation.initiated boolValue]);
     XCTAssertNotNil(importer.conversation.startTime);
     XCTAssertNotNil(importer.conversation.endTime);

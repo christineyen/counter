@@ -33,10 +33,10 @@
 }
 
 - (IBAction)logout:(id)sender {
-    [CYRImporter clearLogsPath];
-    [self.mainWindowController close];
-    [self _reset];
+    [CYRImporter clearState];
+    [self.mainWindowController clear];
     [self _clear];
+    [self _reset];
 }
 
 - (void)_reset {
@@ -55,17 +55,20 @@
 }
 
 - (void)_clear {
-    NSFetchRequest *all = [NSFetchRequest fetchRequestWithEntityName:@"Conversation"];
-    [all setIncludesPropertyValues:NO]; //only fetch the managedObjectID
-
-    NSError *error = nil;
-    NSArray *objs = [self.managedObjectContext executeFetchRequest:all error:&error];
-    //error handling goes here
-    for (NSManagedObject *obj in objs) {
-        [self.managedObjectContext deleteObject:obj];
+    NSError *error;
+    NSPersistentStore *store = [[self.persistentStoreCoordinator persistentStores] lastObject];
+    NSURL *storeURL = [self.persistentStoreCoordinator URLForPersistentStore:store];
+    // lock the current context
+    [self.managedObjectContext lock];
+    [self.managedObjectContext reset]; //to drop pending changes
+    //delete the store from the current managedObjectContext
+    if ([self.persistentStoreCoordinator removePersistentStore:store error:&error]) {
+        // remove the file containing the data
+        [[NSFileManager defaultManager] removeItemAtURL:storeURL error:&error];
+        //recreate the store like in the  appDelegate method
+        [self.persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]; // recreates the persistent store
     }
-    NSError *saveError = nil;
-    [self.managedObjectContext save:&saveError];
+    [self.managedObjectContext unlock];
 }
 
 #pragma mark - Properties

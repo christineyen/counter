@@ -11,6 +11,7 @@
 #import "CYRMainWindowController.h"
 
 #import "CYRAppDelegate.h"
+#import "CYRImporter.h"
 #import "Account.h"
 #import "Conversation.h"
 
@@ -31,6 +32,7 @@ typedef enum {
 @property (weak) IBOutlet NSSegmentedControl *quantitySegmentedControl;
 
 - (IBAction)clickedQuantitySegmentedControl:(id)sender;
+- (void)handleFinishedImport;
 
 - (void)_fetchBuddies:(void(^)(void))complete;
 - (NSString *)_quantityYAxisTitle;
@@ -46,6 +48,10 @@ static CGFloat kLineWidthSelected = 3.0;
 
 - (id)initWithWindow:(NSWindow *)window {
     if (self = [super initWithWindow:window]) {
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(handleFinishedImport)
+                                                     name:kNotificationFinishedImporting
+                                                   object:nil];
     }
     return self;
 }
@@ -59,7 +65,7 @@ static CGFloat kLineWidthSelected = 3.0;
     self.quantityGraphView.hostedGraph = self.graph;
     [self.quantitySegmentedControl setTarget:self];
     [self.quantitySegmentedControl setAction:@selector(clickedQuantitySegmentedControl:)];
-
+    
     [self _fetchBuddies:^{
         [self.tableView reloadData];
     }];
@@ -248,6 +254,11 @@ static CGFloat kLineWidthSelected = 3.0;
 }
 
 #pragma mark - CYRMainWindowController methods
+- (void)clear {
+    self.results = nil;
+    [self.tableView reloadData];
+    [self close];
+}
 
 - (IBAction)clickedQuantitySegmentedControl:(id)sender {
     NSInteger idx = [self.quantitySegmentedControl selectedSegment];
@@ -258,10 +269,17 @@ static CGFloat kLineWidthSelected = 3.0;
     [self _reloadAndRescaleAxes];
 }
 
+- (void)handleFinishedImport {
+    NSLog(@"triggering handle finished import");
+    [self _fetchBuddies:^{
+        [self.tableView reloadData];
+    }];
+}
+
 #pragma mark - Private methods
 - (void)_fetchBuddies:(void(^)(void))complete {
     NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Account"];
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"handle != %@", @"cyenatwork"];
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"handle != %@", [CYRImporter handle]];
     request.predicate = predicate;
     NSSortDescriptor *sort = [NSSortDescriptor sortDescriptorWithKey:@"handle" ascending:YES];
     request.sortDescriptors = @[sort];

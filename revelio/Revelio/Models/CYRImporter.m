@@ -22,6 +22,9 @@
 @property (nonatomic) NSInteger myMsgCount;
 @property (nonatomic) NSInteger totalCount;
 
+// Buffers the path of the file being worked on
+@property (strong, nonatomic) NSURL *url;
+
 // Buffers the last message time seen
 @property (nonatomic, strong) NSString *latestTime;
 
@@ -35,8 +38,7 @@
 @property (strong, nonatomic) NSManagedObjectContext *context;
 
 - (id)initWithPath:(NSString *)path attributes:(NSDictionary *)attributes;
-- (id)initWithXMLDocument:(NSString *)doc;
-- (void)_parseDocument;
+- (void)parseDocument:(NSString *)documentContents;
 - (Account *)_ensureUser:(NSString *)handle;
 
 + (NSDateFormatter *)dateFormatter;
@@ -47,9 +49,16 @@
 
 static NSString *const kLogPathKey = @"LogsPath";
 static NSString *const kLastImportedKey = @"LastImported";
+static NSString *const kHandleKey = @"CurrentHandle";
+
+NSString *const kNotificationFinishedImporting = @"Finished Importing";
 
 + (NSString *)logsPath {
     return [[NSUserDefaults standardUserDefaults] stringForKey:kLogPathKey];
+}
+
++ (NSString *)handle {
+    return [[NSUserDefaults standardUserDefaults] stringForKey:kHandleKey];
 }
 
 + (BOOL)setLogsPath:(NSString *)path error:(NSError **)error {
@@ -71,12 +80,19 @@ static NSString *const kLastImportedKey = @"LastImported";
     }
 
     [[NSUserDefaults standardUserDefaults] setObject:path forKey:kLogPathKey];
+
+    // Trim off the SERVICE. portion of the folder name
+    NSArray *components = [[segments lastObject] componentsSeparatedByString:@"."];
+    NSString *handle = [[components subarrayWithRange:NSMakeRange(1, [components count] - 1)] componentsJoinedByString:@"."];
+    [[NSUserDefaults standardUserDefaults] setObject:handle forKey:kHandleKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
     return YES;
 }
 
-+ (void)clearLogsPath {
++ (void)clearState {
     [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kLogPathKey];
+    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kHandleKey];
+    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kLastImportedKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
@@ -110,7 +126,7 @@ static NSString *const kLastImportedKey = @"LastImported";
 
         CYRImporter *importer = [[self alloc] initWithPath:[theURL path] attributes:attributes];
         NSAssert([importer.conversation.size integerValue] > 0, @"Ensure that the conversation.size > 0");
-//        NSLog(@"imported %@ bytes at %@", importer.conversation.size, [theURL path]);
+
         
         if (date == nil || ([date timeIntervalSince1970] < [importer.conversation.timestamp timeIntervalSince1970])) {
             date = importer.conversation.timestamp;
@@ -124,6 +140,7 @@ static NSString *const kLastImportedKey = @"LastImported";
         NSLog(@"saved context. setting last imported at %@", date);
         [[NSUserDefaults standardUserDefaults] setDouble:[date timeIntervalSince1970] forKey:kLastImportedKey];
         [[NSUserDefaults standardUserDefaults] synchronize];
+        [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationFinishedImporting object:nil];
     }
 }
 
@@ -146,33 +163,32 @@ static NSString *const kLastImportedKey = @"LastImported";
 }
 
 - (id)initWithPath:(NSString *)path attributes:(NSDictionary *)attributes {
-    NSString *conv = [NSString stringWithContentsOfFile:path
-                                               encoding:NSUTF8StringEncoding
-                                                  error:NULL];
-    if (self = [self initWithXMLDocument:conv]) {
+    if (self = [self init]) {
         self.conversation.path = path;
         self.conversation.size = [attributes objectForKey:NSFileSize];
         self.conversation.timestamp = [attributes objectForKey:NSFileCreationDate];
+
+        NSString *conv = [NSString stringWithContentsOfFile:path
+                                                   encoding:NSUTF8StringEncoding
+                                                      error:NULL];
+        if (conv) {
+            [self parseDocument:conv];
+        }
     }
     return self;
 }
 
-// TODO: actually verify that this input is valid XML somehow
-- (id)initWithXMLDocument:(NSString *)doc {
-    if (self = [super init]) {
-        self.parser = [[NSXMLParser alloc] initWithData:[doc dataUsingEncoding:NSUTF8StringEncoding]];
-        self.parser.delegate = self;
-        [self _parseDocument];
+- (void)parseDocument:(NSString *)documentContents {
+    self.parser = [[NSXMLParser alloc] initWithData:[documentContents dataUsingEncoding:NSUTF8StringEncoding]];
+    self.parser.delegate = self;
+    if (![self.parser parse]) {
+        NSLog(@"FAILED PARSING: %@", [self.parser parserError]);
     }
-    return self;
-}
-
-- (Conversation *)conversation {
-    if (_conversation == nil) {
-        _conversation = [NSEntityDescription insertNewObjectForEntityForName:@"Conversation" inManagedObjectContext:[[self class] context]];
-        _conversation.initiated = @NO;
-    }
-    return _conversation;
+    self.parser = nil;
+    self.user = [self _ensureUser:[[self class] handle]];
+    self.buddy = [self _ensureUser:self.buddyHandle];
+    self.conversation.user = self.user;
+    self.conversation.buddy = self.buddy;
 }
 
 #pragma mark - NSXMLParserDelegate methods
@@ -184,7 +200,7 @@ static NSString *const kLastImportedKey = @"LastImported";
     }
     
     BOOL firstMsg = self.totalCount == 0;
-    BOOL senderIsSelf = [[attributeDict objectForKey:@"sender"] isEqualToString:@"cyenatwork"];
+    BOOL senderIsSelf = [[attributeDict objectForKey:@"sender"] isEqualToString:[[self class] handle]];
     
     if (firstMsg && senderIsSelf) {
         self.conversation.initiated = @YES;
@@ -228,24 +244,21 @@ static NSString *const kLastImportedKey = @"LastImported";
 }
 
 - (void)parser:(NSXMLParser *)parser parseErrorOccurred:(NSError *)parseError {
+    NSLog(@"parser: %@", parser);
+    NSLog(@"parse error occurred: %@, %@, %lu", parser.publicID, parser.systemID, parser.lineNumber);
     NSLog(@"parse error: %@", parseError);
 }
 
+#pragma mark - Properties
+- (Conversation *)conversation {
+    if (_conversation == nil) {
+        _conversation = [NSEntityDescription insertNewObjectForEntityForName:@"Conversation" inManagedObjectContext:[[self class] context]];
+        _conversation.initiated = @NO;
+    }
+    return _conversation;
+}
 
 #pragma mark - Private methods
-- (void)_parseDocument {
-    if (self.parser == nil) {
-        return;
-    }
-    if (![self.parser parse]) {
-        NSLog(@"FAILED PARSING: %@", [self.parser parserError]);
-    }
-    self.parser = nil;
-    self.user = [self _ensureUser:@"cyenatwork"];
-    self.buddy = [self _ensureUser:self.buddyHandle];
-    self.conversation.user = self.user;
-    self.conversation.buddy = self.buddy;
-}
 
 - (Account *)_ensureUser:(NSString *)handle {
     NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Account"];

@@ -7,8 +7,12 @@
 //
 
 @interface CYRImporter : NSObject
+
+extern NSString *const kNotificationFinishedImporting;
+
 + (NSString *)logsPath;
++ (NSString *)handle;
 + (BOOL)setLogsPath:(NSString *)path error:(NSError **)error;
-+ (void)clearLogsPath;
++ (void)clearState;
 + (void)maybeUpdate;
 @end
