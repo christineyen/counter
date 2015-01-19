@@ -11,8 +11,7 @@
 
 @interface CYRMainWindowController : NSWindowController
 @property (weak, nonatomic) IBOutlet NSTableView *tableView;
-@property (weak, nonatomic) IBOutlet CPTGraphHostingView *quantityGraphView;
-@property (weak, nonatomic) IBOutlet CPTGraphHostingView *skewGraphView;
+@property (weak, nonatomic) IBOutlet CPTGraphHostingView *graphView;
 
 - (void)clear;
 @end

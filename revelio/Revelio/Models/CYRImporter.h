@@ -8,6 +8,9 @@
 
 @interface CYRImporter : NSObject
 
+extern NSString *const kDefaultsLogPathKey;
+extern NSString *const kDefaultsLastImportedKey;
+extern NSString *const kDefaultsHandleKey;
 extern NSString *const kNotificationFinishedImporting;
 
 + (NSString *)logsPath;

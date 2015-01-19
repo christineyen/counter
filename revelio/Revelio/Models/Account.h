@@ -20,6 +20,7 @@
 @property (strong, nonatomic) NSArray *conversationsByCount;
 @property (strong, nonatomic) NSArray *conversationsByMessages;
 @property (strong, nonatomic) NSArray *conversationsBySize;
+@property (strong, nonatomic) NSArray *conversationsBySkew;
 
 - (Conversation *)lastConversation;
 

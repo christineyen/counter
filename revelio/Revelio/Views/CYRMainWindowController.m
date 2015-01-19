@@ -16,35 +16,50 @@
 #import "Conversation.h"
 
 typedef enum {
-    kCount,
-    kMessages,
-    kSize
-} CumulativeMode;
+    kTabQuantity,
+    kTabTime,
+    kTabSkew
+} TabMode;
 
-@interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate, NSTabViewDelegate, CPTPlotDataSource, CPTPlotSpaceDelegate>
+typedef enum {
+    kQuantityCount,
+    kQuantityMessages,
+    kQuantitySize
+} QuantityMode;
+
+typedef enum {
+    kTabLength,
+    kTabTimeOfDay
+} TimeMode;
+
+@interface CYRMainWindowController ()<NSTableViewDataSource, NSTableViewDelegate, CPTPlotSpaceDelegate, CPTPlotDataSource>
 @property (strong, nonatomic) NSArray *results;
 @property (strong, nonatomic) NSOrderedSet *selectedBuddies;
 
 @property (strong, nonatomic) NSDateFormatter *dateFormatter;
 @property (strong, nonatomic) CPTGraph *graph;
-@property (nonatomic) CumulativeMode mode;
+@property (nonatomic) TabMode tabMode;
+@property (nonatomic) QuantityMode quantityMode;
 
 @property (weak) IBOutlet NSSegmentedControl *quantitySegmentedControl;
+@property (weak) IBOutlet NSView *quantityControlView;
 
 - (IBAction)clickedQuantitySegmentedControl:(id)sender;
+- (IBAction)clickedModeSegmentedControl:(id)sender;
 - (void)handleFinishedImport;
 
 - (void)_fetchBuddies:(void(^)(void))complete;
 - (NSString *)_quantityYAxisTitle;
 - (void)_reloadAndRescaleAxes;
 - (CPTPlot *)_buildPlot:(NSString *)identifier;
+- (CPTPlot *)_buildQuantityPlot:(NSString *)identifier;
+- (CPTPlot *)_buildSkewPlot:(NSString *)identifier;
 - (CPTColor *)_colorForIdentifier:(NSString *)identifier;
 @end
 
 @implementation CYRMainWindowController
 
 static CGFloat kLineWidthDefault = 1.0;
-static CGFloat kLineWidthSelected = 3.0;
 
 - (id)initWithWindow:(NSWindow *)window {
     if (self = [super initWithWindow:window]) {
@@ -62,7 +77,8 @@ static CGFloat kLineWidthSelected = 3.0;
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     
-    self.quantityGraphView.hostedGraph = self.graph;
+    self.graphView.hostedGraph = self.graph;
+    
     [self.quantitySegmentedControl setTarget:self];
     [self.quantitySegmentedControl setAction:@selector(clickedQuantitySegmentedControl:)];
     
@@ -123,6 +139,19 @@ static CGFloat kLineWidthSelected = 3.0;
         legend.borderLineStyle = x.axisLineStyle;
         legend.cornerRadius    = 5.0;
         legend.numberOfColumns = 1;
+//        CPTLegend *theLegend = [CPTLegend legendWithGraph:graph];
+//        theLegend.numberOfRows    = 2;
+//        theLegend.fill            = [CPTFill fillWithColor:[CPTColor colorWithGenericGray:CPTFloat(0.15)]];
+//        theLegend.borderLineStyle = barLineStyle;
+//        theLegend.cornerRadius    = 10.0;
+//        theLegend.swatchSize      = CGSizeMake(20.0, 20.0);
+//        whiteTextStyle.fontSize   = 16.0;
+//        theLegend.textStyle       = whiteTextStyle;
+//        theLegend.rowMargin       = 10.0;
+//        theLegend.paddingLeft     = 12.0;
+//        theLegend.paddingTop      = 12.0;
+//        theLegend.paddingRight    = 12.0;
+//        theLegend.paddingBottom   = 12.0;
 
         _graph.legend = legend;
         _graph.legendAnchor           = CPTRectAnchorTopRight;
@@ -130,12 +159,6 @@ static CGFloat kLineWidthSelected = 3.0;
     }
     return _graph;
         
-}
-
-#pragma mark - NSTabViewDelegate methods
-- (void)tabView:(NSTabView *)tabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem {
-    // TODO: be intelligent about not updating graphs on all tabs, all the time.
-    // update graph on new tab
 }
 
 #pragma mark - NSTableViewDataSource methods
@@ -207,19 +230,23 @@ static CGFloat kLineWidthSelected = 3.0;
     Account *account = [self.selectedBuddies objectAtIndex:accIdx];
     
     DataPoint *datapoint;
-    switch (self.mode) {
-        case 0:
-            datapoint = account.conversationsByCount[idx];
-            break;
-        case 1:
-            datapoint = account.conversationsByMessages[idx];
-            break;
-        case 2:
-            datapoint = account.conversationsBySize[idx];
-            break;
-        default:
-            NSLog(@"wat? %@", @(self.mode));
-            break;
+    if (self.tabMode == kTabQuantity) {
+        switch (self.quantityMode) {
+            case kQuantityCount:
+                datapoint = account.conversationsByCount[idx];
+                break;
+            case kQuantityMessages:
+                datapoint = account.conversationsByMessages[idx];
+                break;
+            case kQuantitySize:
+                datapoint = account.conversationsBySize[idx];
+                break;
+            default:
+                NSLog(@"wat? %@", @(self.quantityMode));
+                break;
+        }
+    } else if (self.tabMode == kTabSkew) {
+        datapoint = account.conversationsBySkew[idx];
     }
     if (fieldEnum == CPTScatterPlotFieldX) {
         return datapoint.x;
@@ -231,29 +258,8 @@ static CGFloat kLineWidthSelected = 3.0;
     return nil;
 }
 
-#pragma mark - CPTPlotDelegate methods
--(void)scatterPlot:(CPTScatterPlot *)plot plotSymbolWasSelectedAtRecordIndex:(NSUInteger)idx {
-    NSLog(@"touch symbol at idx %lu in  %@", idx, plot);
-}
-
--(void)scatterPlotDataLineWasSelected:(CPTScatterPlot *)plot {
-    [[self.graph allPlots] enumerateObjectsUsingBlock:^(CPTScatterPlot *gPlot, NSUInteger idx, BOOL *stop) {
-        CPTMutableLineStyle *lineStyle = [gPlot.dataLineStyle mutableCopy];
-        CGFloat oldWidth = lineStyle.lineWidth;
-        if (plot == gPlot) {
-            lineStyle.lineWidth = kLineWidthSelected;
-        } else {
-            lineStyle.lineWidth = kLineWidthDefault;
-        }
-        if (oldWidth == lineStyle.lineWidth) {
-            return;
-        }
-        gPlot.dataLineStyle = lineStyle;
-        [gPlot reloadPlotSymbols];
-    }];
-}
-
 #pragma mark - CYRMainWindowController methods
+
 - (void)clear {
     self.results = nil;
     [self.tableView reloadData];
@@ -262,10 +268,33 @@ static CGFloat kLineWidthSelected = 3.0;
 
 - (IBAction)clickedQuantitySegmentedControl:(id)sender {
     NSInteger idx = [self.quantitySegmentedControl selectedSegment];
-    if (idx == self.mode) {
+    if (idx == self.quantityMode) {
         return;
     }
-    self.mode = (int)idx;
+    self.quantityMode = (int)idx;
+    [self _reloadAndRescaleAxes];
+}
+
+- (IBAction)clickedModeSegmentedControl:(id)sender {
+    NSInteger idx = [((NSSegmentedControl *)sender) selectedSegment];
+    if (idx == self.tabMode) {
+        return;
+    }
+    self.tabMode = (int)idx;
+
+    [[self.graph allPlots] enumerateObjectsUsingBlock:^(CPTPlot *plot, NSUInteger idx, BOOL *stop) {
+        [self.graph removePlot:plot];
+        [self.graph.legend removePlot:plot];
+    }];
+    
+    [self.selectedBuddies enumerateObjectsUsingBlock:^(Account *account, NSUInteger idx, BOOL *stop) {
+        CPTPlot *plot = [self _buildPlot:account.handle];
+        [self.graph addPlot:plot];
+        [self.graph.legend addPlot:plot];
+    }];
+    
+    self.quantityControlView.hidden = !(self.tabMode == kTabQuantity);
+    
     [self _reloadAndRescaleAxes];
 }
 
@@ -296,9 +325,9 @@ static CGFloat kLineWidthSelected = 3.0;
 }
 
 - (NSString *)_quantityYAxisTitle {
-    if (self.mode == kCount) {
+    if (self.quantityMode == kQuantityCount) {
         return @"Number of conversation over time";
-    } else if (self.mode == kMessages) {
+    } else if (self.quantityMode == kQuantityMessages) {
         return @"Number of messages over time";
     }
     return @"Number of bytes on disk over time";
@@ -311,27 +340,52 @@ static CGFloat kLineWidthSelected = 3.0;
     // Extend the ranges by 30% for neatness
     CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)self.graph.defaultPlotSpace;
     [plotSpace scaleToFitPlots:[self.graph allPlots]];
+    
+    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.graphView.hostedGraph.axisSet;
+    CPTXYAxis *xAxis = axisSet.xAxis;
+    CPTXYAxis *yAxis = axisSet.yAxis;
+    
+    // Set up common X-Axis handling
     CPTMutablePlotRange *xRange = [plotSpace.xRange mutableCopy];
     NSDecimal earliestDate = xRange.location;
-    CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
     [xRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
-    [yRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
-    plotSpace.xRange = xRange;
-    plotSpace.yRange = yRange;
-    
-    // Update to have Y-Axis cross X-Axis at earliest chat date
-    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.quantityGraphView.hostedGraph.axisSet;
-    CPTXYAxis *xAxis = axisSet.xAxis;
     xAxis.titleLocation = xRange.midPoint;
-    xAxis.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);; //// probably doesn't have to go here
-    CPTXYAxis *yAxis = axisSet.yAxis;
-    yAxis.title = [self _quantityYAxisTitle];
-    yAxis.titleLocation = yRange.midPoint;
+    xAxis.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);; // probably doesn't have to go here
+
+    if (self.tabMode == kTabQuantity) {
+        CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
+        [yRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
+        
+        plotSpace.xRange = xRange;
+        plotSpace.yRange = yRange;
+
+        yAxis.title = [self _quantityYAxisTitle];
+        yAxis.titleLocation = yRange.midPoint;
+    } else if (self.tabMode == kTabSkew) {
+        CPTPlotRange *yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromDouble(-1.2) length:CPTDecimalFromDouble(2.4)];
+        plotSpace.xRange = xRange;
+        plotSpace.yRange = yRange;
+        
+        yAxis.title = @"They sent more messages                              I sent more messages";
+        yAxis.titleLocation = CPTDecimalFromDouble(0);
+    }
+    
+    // TODO: Update to have Y-Axis cross X-Axis a little before earliest chat date.
+    // NSDecimal orthogonal = CPTDecimalDivide(xRange.length, CPTDecimalFromDouble(50));
+    // CPTDecimalSubtract(earliestDate, orthogonal);
+    // Probably tweak the [xRange expandRangeByFactor:] bit, too
     yAxis.orthogonalCoordinateDecimal = earliestDate;
-    self.quantityGraphView.hostedGraph.axisSet.axes = @[ xAxis, yAxis ];
+    self.graphView.hostedGraph.axisSet.axes = @[ xAxis, yAxis ];
 }
 
 - (CPTPlot *)_buildPlot:(NSString *)identifier {
+    if (self.tabMode == kTabSkew) {
+        return [self _buildSkewPlot:identifier];
+    }
+    return [self _buildQuantityPlot:identifier];
+}
+
+- (CPTPlot *)_buildQuantityPlot:(NSString *)identifier {
     // Create a plot that uses the data source method
     CPTScatterPlot *plot = [[CPTScatterPlot alloc] init];
     plot.identifier = identifier;
@@ -354,7 +408,7 @@ static CGFloat kLineWidthSelected = 3.0;
     CPTPlotSymbol *plotSymbol     = [CPTPlotSymbol ellipsePlotSymbol];
     plotSymbol.fill               = [CPTFill fillWithColor:fillColor];
     plotSymbol.lineStyle          = symbolLineStyle;
-    plotSymbol.size               = CGSizeMake(5.0, 5.0);
+    plotSymbol.size               = CGSizeMake(1.0, 1.0);
     plot.plotSymbol               = plotSymbol;
     
     // Put an area gradient under the plot above
@@ -362,6 +416,27 @@ static CGFloat kLineWidthSelected = 3.0;
     plot.areaFill      = areaGradientFill;
     plot.areaBaseValue = CPTDecimalFromDouble(0);
 
+    return plot;
+}
+
+- (CPTPlot *)_buildSkewPlot:(NSString *)identifier {
+    // Create a plot that uses the data source method
+    CPTBarPlot *plot = [[CPTBarPlot alloc] init];
+    plot.identifier = identifier;
+    plot.dataSource = self;
+    plot.delegate   = self;
+
+    // Set line style
+    CPTColor *color                   = [self _colorForIdentifier:identifier];
+    CPTMutableLineStyle *barLineStyle = [[CPTMutableLineStyle alloc] init];
+    barLineStyle.lineWidth            = 1.0;
+    barLineStyle.lineColor            = color;
+    
+    // Create first bar plot
+    plot.lineStyle       = barLineStyle;
+    plot.fill            = [CPTFill fillWithColor:color];
+    plot.barWidth        = CPTDecimalFromFloat(20.0f); // bar is 50% of the available space
+    
     return plot;
 }
 

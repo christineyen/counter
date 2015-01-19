@@ -47,18 +47,19 @@
 
 @implementation CYRImporter
 
-static NSString *const kLogPathKey = @"LogsPath";
-static NSString *const kLastImportedKey = @"LastImported";
-static NSString *const kHandleKey = @"CurrentHandle";
+NSString *const kDefaultsLogPathKey = @"LogsPath";
+NSString *const kDefaultsLastImportedKey = @"LastImported";
+NSString *const kDefaultsHandleKey = @"CurrentHandle";
 
+// external
 NSString *const kNotificationFinishedImporting = @"Finished Importing";
 
 + (NSString *)logsPath {
-    return [[NSUserDefaults standardUserDefaults] stringForKey:kLogPathKey];
+    return [[NSUserDefaults standardUserDefaults] stringForKey:kDefaultsLogPathKey];
 }
 
 + (NSString *)handle {
-    return [[NSUserDefaults standardUserDefaults] stringForKey:kHandleKey];
+    return [[NSUserDefaults standardUserDefaults] stringForKey:kDefaultsHandleKey];
 }
 
 + (BOOL)setLogsPath:(NSString *)path error:(NSError **)error {
@@ -79,20 +80,20 @@ NSString *const kNotificationFinishedImporting = @"Finished Importing";
         return NO;
     }
 
-    [[NSUserDefaults standardUserDefaults] setObject:path forKey:kLogPathKey];
+    [[NSUserDefaults standardUserDefaults] setObject:path forKey:kDefaultsLogPathKey];
 
     // Trim off the SERVICE. portion of the folder name
     NSArray *components = [[segments lastObject] componentsSeparatedByString:@"."];
     NSString *handle = [[components subarrayWithRange:NSMakeRange(1, [components count] - 1)] componentsJoinedByString:@"."];
-    [[NSUserDefaults standardUserDefaults] setObject:handle forKey:kHandleKey];
+    [[NSUserDefaults standardUserDefaults] setObject:handle forKey:kDefaultsHandleKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
     return YES;
 }
 
 + (void)clearState {
-    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kLogPathKey];
-    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kHandleKey];
-    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kLastImportedKey];
+    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kDefaultsLogPathKey];
+    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kDefaultsHandleKey];
+    [[NSUserDefaults standardUserDefaults] setObject:nil forKey:kDefaultsLastImportedKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
@@ -102,7 +103,7 @@ NSString *const kNotificationFinishedImporting = @"Finished Importing";
                                           includingPropertiesForKeys:@[ NSURLIsRegularFileKey ]
                                                              options:NSDirectoryEnumerationSkipsHiddenFiles
                                                         errorHandler:nil];
-    NSTimeInterval latestImport = [[NSUserDefaults standardUserDefaults] doubleForKey:kLastImportedKey];
+    NSTimeInterval latestImport = [[NSUserDefaults standardUserDefaults] doubleForKey:kDefaultsLastImportedKey];
     
     NSError *err;
     NSDate *date;
@@ -138,7 +139,7 @@ NSString *const kNotificationFinishedImporting = @"Finished Importing";
         NSLog(@"error saving context: %@", ctxErr);
     } else if (date != nil) {
         NSLog(@"saved context. setting last imported at %@", date);
-        [[NSUserDefaults standardUserDefaults] setDouble:[date timeIntervalSince1970] forKey:kLastImportedKey];
+        [[NSUserDefaults standardUserDefaults] setDouble:[date timeIntervalSince1970] forKey:kDefaultsLastImportedKey];
         [[NSUserDefaults standardUserDefaults] synchronize];
         [[NSNotificationCenter defaultCenter] postNotificationName:kNotificationFinishedImporting object:nil];
     }
@@ -245,7 +246,7 @@ NSString *const kNotificationFinishedImporting = @"Finished Importing";
 
 - (void)parser:(NSXMLParser *)parser parseErrorOccurred:(NSError *)parseError {
     NSLog(@"parser: %@", parser);
-    NSLog(@"parse error occurred: %@, %@, %lu", parser.publicID, parser.systemID, parser.lineNumber);
+    NSLog(@"parse error occurred: %@, %lu", self.conversation.path, parser.lineNumber);
     NSLog(@"parse error: %@", parseError);
 }
 
