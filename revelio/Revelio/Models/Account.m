@@ -117,7 +117,6 @@
             secondPoint[@(CPTBarPlotFieldBarBase)] = [self _timeOfDayFromComponents:endComponents];
             [array addObject:secondPoint];
         }];
-
         _conversationsByTime = array;
     }
     return _conversationsByTime;

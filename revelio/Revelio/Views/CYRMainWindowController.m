@@ -54,7 +54,9 @@ typedef enum {
 - (CPTPlot *)_buildPlot:(NSString *)identifier;
 - (CPTPlot *)_buildQuantityPlot:(NSString *)identifier;
 - (CPTPlot *)_buildSkewPlot:(NSString *)identifier;
+- (CPTPlot *)_buildTimePlot:(NSString *)identifier;
 - (CPTColor *)_colorForIdentifier:(NSString *)identifier;
+- (CPTColor *)_colorForIdentifier:(NSString *)identifier alpha:(CGFloat)alpha;
 @end
 
 @implementation CYRMainWindowController
@@ -220,6 +222,10 @@ static CGFloat kLineWidthDefault = 1.0;
         return [account.handle isEqualToString:(NSString *)plot.identifier];
     }];
     Account *account = [self.selectedBuddies objectAtIndex:idx];
+    if (self.tabMode == kTabTime) {
+        // Breaks over the day boundary
+        return [account.conversationsByTime count];
+    }
     return [account.conversations count];
 }
 
@@ -228,8 +234,8 @@ static CGFloat kLineWidthDefault = 1.0;
         return [account.handle isEqualToString:(NSString *)plot.identifier];
     }];
     Account *account = [self.selectedBuddies objectAtIndex:accIdx];
-    
-    DataPoint *datapoint;
+
+    NSDictionary *datapoint;
     if (self.tabMode == kTabQuantity) {
         switch (self.quantityMode) {
             case kQuantityCount:
@@ -245,13 +251,12 @@ static CGFloat kLineWidthDefault = 1.0;
                 NSLog(@"wat? %@", @(self.quantityMode));
                 break;
         }
+    } else if (self.tabMode == kTabTime) {
+        datapoint = account.conversationsByTime[idx];
     } else if (self.tabMode == kTabSkew) {
         datapoint = account.conversationsBySkew[idx];
     }
-    if (fieldEnum == CPTScatterPlotFieldX) {
-        return datapoint.x;
-    }
-    return datapoint.y;
+    return datapoint[@(fieldEnum)];
 }
 
 - (CPTLayer *)dataLabelForPlot:(CPTPlot *)plot recordIndex:(NSUInteger)idx {
@@ -340,49 +345,66 @@ static CGFloat kLineWidthDefault = 1.0;
     // Extend the ranges by 30% for neatness
     CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)self.graph.defaultPlotSpace;
     [plotSpace scaleToFitPlots:[self.graph allPlots]];
-    
-    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.graphView.hostedGraph.axisSet;
+
+    float xOffset = 0.15;
+    CPTXYAxisSet *axisSet = (CPTXYAxisSet *)self.graph.axisSet;
     CPTXYAxis *xAxis = axisSet.xAxis;
     CPTXYAxis *yAxis = axisSet.yAxis;
-    
+
     // Set up common X-Axis handling
     CPTMutablePlotRange *xRange = [plotSpace.xRange mutableCopy];
     NSDecimal earliestDate = xRange.location;
-    [xRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
+    [xRange expandRangeByFactor:CPTDecimalFromDouble(1 + 2*xOffset)];
     xAxis.titleLocation = xRange.midPoint;
-    xAxis.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);; // probably doesn't have to go here
+    xAxis.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0); // probably doesn't have to go here
+    plotSpace.xRange = xRange;
+
+    // Set up common Y-Axis handling
+    yAxis.orthogonalCoordinateDecimal = CPTDecimalAdd(earliestDate, CPTDecimalMultiply(CPTDecimalSubtract(xRange.location, earliestDate), CPTDecimalFromFloat(xOffset)));
+    yAxis.labelingPolicy = CPTAxisLabelingPolicyAutomatic;
 
     if (self.tabMode == kTabQuantity) {
         CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
-        [yRange expandRangeByFactor:CPTDecimalFromDouble(1.3)];
-        
-        plotSpace.xRange = xRange;
+        [yRange unionPlotRange:[CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(0) length:CPTDecimalFromInt(0)]];
+        [yRange expandRangeByFactor:CPTDecimalFromDouble(1 + 2*xOffset)];
         plotSpace.yRange = yRange;
 
         yAxis.title = [self _quantityYAxisTitle];
-        yAxis.titleLocation = yRange.midPoint;
+    } else if (self.tabMode == kTabTime) {
+        plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(-7200) length:CPTDecimalFromInt(100800)];
+
+        yAxis.title = @"time of day in conversation";
+        yAxis.labelingPolicy = CPTAxisLabelingPolicyNone;
+
+        NSMutableSet *labels = [NSMutableSet set];
+        for (NSUInteger i = 0; i <= 24; i += 2) {
+            CPTAxisLabel *label = [[CPTAxisLabel alloc] initWithText:[NSString stringWithFormat:@"%.2lu:00", i]
+                                                           textStyle:yAxis.labelTextStyle];
+            label.tickLocation = CPTDecimalFromUnsignedInteger(i*3600);
+            label.offset = yAxis.labelOffset;
+            [labels addObject:label];
+        }
+        yAxis.axisLabels = labels;
     } else if (self.tabMode == kTabSkew) {
-        CPTPlotRange *yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromDouble(-1.2) length:CPTDecimalFromDouble(2.4)];
-        plotSpace.xRange = xRange;
-        plotSpace.yRange = yRange;
+        plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromDouble(-1.2) length:CPTDecimalFromDouble(2.4)];
         
         yAxis.title = @"They sent more messages                              I sent more messages";
         yAxis.titleLocation = CPTDecimalFromDouble(0);
     }
     
-    // TODO: Update to have Y-Axis cross X-Axis a little before earliest chat date.
-    // NSDecimal orthogonal = CPTDecimalDivide(xRange.length, CPTDecimalFromDouble(50));
-    // CPTDecimalSubtract(earliestDate, orthogonal);
-    // Probably tweak the [xRange expandRangeByFactor:] bit, too
-    yAxis.orthogonalCoordinateDecimal = earliestDate;
+    yAxis.titleLocation = plotSpace.yRange.midPoint;
     self.graphView.hostedGraph.axisSet.axes = @[ xAxis, yAxis ];
 }
 
 - (CPTPlot *)_buildPlot:(NSString *)identifier {
-    if (self.tabMode == kTabSkew) {
+    if (self.tabMode == kTabQuantity) {
+        return [self _buildQuantityPlot:identifier];
+    } else if (self.tabMode == kTabSkew) {
         return [self _buildSkewPlot:identifier];
+    } else if (self.tabMode == kTabTime) {
+        return [self _buildTimePlot:identifier];
     }
-    return [self _buildQuantityPlot:identifier];
+    return nil;
 }
 
 - (CPTPlot *)_buildQuantityPlot:(NSString *)identifier {
@@ -440,12 +462,36 @@ static CGFloat kLineWidthDefault = 1.0;
     return plot;
 }
 
+- (CPTPlot *)_buildTimePlot:(NSString *)identifier {
+    // Create a plot that uses the data source method
+    CPTBarPlot *plot = [[CPTBarPlot alloc] init];
+    plot.identifier = identifier;
+    plot.dataSource = self;
+    plot.delegate   = self;
+    plot.barBasesVary = YES;
+
+    // Set line style
+    CPTColor *color                   = [self _colorForIdentifier:identifier alpha:0.5];
+    
+    // Create first bar plot
+    plot.lineStyle       = nil;
+    plot.fill            = [CPTFill fillWithColor:color];
+    plot.barWidthsAreInViewCoordinates = YES;
+    plot.barWidth        = CPTDecimalFromFloat(10); // bar is 50% of the available space
+    
+    return plot;
+}
+
 - (CPTColor *)_colorForIdentifier:(NSString *)identifier {
+    return [self _colorForIdentifier:identifier alpha:1];
+}
+
+- (CPTColor *)_colorForIdentifier:(NSString *)identifier alpha:(CGFloat)alpha {
     NSUInteger hash = [identifier hash];
     NSUInteger r = (hash & 0xFF0000) >> 16;
     NSUInteger g = (hash & 0x00FF00) >> 8;
     NSUInteger b = hash & 0x0000FF;
-    return [CPTColor colorWithComponentRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:1];
+    return [CPTColor colorWithComponentRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:alpha];
 }
 
 @end
