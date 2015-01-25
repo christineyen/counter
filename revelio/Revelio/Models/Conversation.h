@@ -20,6 +20,7 @@
 @property (nonatomic, retain) NSDate * startTime;
 @property (nonatomic, retain) NSDate * endTime;
 @property (nonatomic, retain) NSDate * timestamp;
+@property (nonatomic, retain) NSNumber * tzOffset;
 @property (nonatomic, retain) NSString * path;
 @property (nonatomic, retain) Account *user;
 @property (nonatomic, retain) Account *buddy;

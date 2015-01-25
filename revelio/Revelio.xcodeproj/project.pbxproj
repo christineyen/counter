@@ -29,6 +29,9 @@
 		975D8241183F2A100057EA04 /* CYRImporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D8240183F2A100057EA04 /* CYRImporter.m */; };
 		975D8254183F46240057EA04 /* CYRMainWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 975D8252183F46240057EA04 /* CYRMainWindowController.m */; };
 		975D8255183F46240057EA04 /* CYRMainWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 975D8253183F46240057EA04 /* CYRMainWindowController.xib */; };
+		97DDD9801A75925700234B32 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 97DDD97A1A75925700234B32 /* Info.plist */; };
+		97DDD9811A75925700234B32 /* ISO8601Serialization.m in Sources */ = {isa = PBXBuildFile; fileRef = 97DDD97D1A75925700234B32 /* ISO8601Serialization.m */; };
+		97DDD9821A75925700234B32 /* NSDate+ISO8601.m in Sources */ = {isa = PBXBuildFile; fileRef = 97DDD97F1A75925700234B32 /* NSDate+ISO8601.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +103,12 @@
 		975D8251183F46240057EA04 /* CYRMainWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CYRMainWindowController.h; sourceTree = "<group>"; };
 		975D8252183F46240057EA04 /* CYRMainWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CYRMainWindowController.m; sourceTree = "<group>"; };
 		975D8253183F46240057EA04 /* CYRMainWindowController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = CYRMainWindowController.xib; sourceTree = "<group>"; };
+		97DDD97A1A75925700234B32 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		97DDD97B1A75925700234B32 /* ISO8601.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISO8601.h; sourceTree = "<group>"; };
+		97DDD97C1A75925700234B32 /* ISO8601Serialization.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISO8601Serialization.h; sourceTree = "<group>"; };
+		97DDD97D1A75925700234B32 /* ISO8601Serialization.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISO8601Serialization.m; sourceTree = "<group>"; };
+		97DDD97E1A75925700234B32 /* NSDate+ISO8601.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSDate+ISO8601.h"; sourceTree = "<group>"; };
+		97DDD97F1A75925700234B32 /* NSDate+ISO8601.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSDate+ISO8601.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -175,6 +184,7 @@
 				975D8243183F2AD60057EA04 /* Views */,
 				974AF124183CB8BC00436B0E /* CYRAppDelegate.h */,
 				974AF125183CB8BC00436B0E /* CYRAppDelegate.m */,
+				97DDD9781A75924D00234B32 /* Libraries */,
 				974AF119183CB8BC00436B0E /* Supporting Files */,
 			);
 			path = Revelio;
@@ -243,6 +253,27 @@
 				975D8253183F46240057EA04 /* CYRMainWindowController.xib */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		97DDD9781A75924D00234B32 /* Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				97DDD9791A75925700234B32 /* ISO8601 */,
+			);
+			name = Libraries;
+			sourceTree = "<group>";
+		};
+		97DDD9791A75925700234B32 /* ISO8601 */ = {
+			isa = PBXGroup;
+			children = (
+				97DDD97A1A75925700234B32 /* Info.plist */,
+				97DDD97B1A75925700234B32 /* ISO8601.h */,
+				97DDD97C1A75925700234B32 /* ISO8601Serialization.h */,
+				97DDD97D1A75925700234B32 /* ISO8601Serialization.m */,
+				97DDD97E1A75925700234B32 /* NSDate+ISO8601.h */,
+				97DDD97F1A75925700234B32 /* NSDate+ISO8601.m */,
+			);
+			path = ISO8601;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -355,6 +386,7 @@
 			files = (
 				974AF11D183CB8BC00436B0E /* InfoPlist.strings in Resources */,
 				974AF12E183CB8BC00436B0E /* Images.xcassets in Resources */,
+				97DDD9801A75925700234B32 /* Info.plist in Resources */,
 				974AF123183CB8BC00436B0E /* Credits.rtf in Resources */,
 				975D8255183F46240057EA04 /* CYRMainWindowController.xib in Resources */,
 				974AF129183CB8BC00436B0E /* MainMenu.xib in Resources */,
@@ -377,6 +409,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				975D8254183F46240057EA04 /* CYRMainWindowController.m in Sources */,
+				97DDD9821A75925700234B32 /* NSDate+ISO8601.m in Sources */,
+				97DDD9811A75925700234B32 /* ISO8601Serialization.m in Sources */,
 				975D823A183F295C0057EA04 /* Conversation.m in Sources */,
 				974AF12C183CB8BC00436B0E /* Revelio.xcdatamodeld in Sources */,
 				974AF11F183CB8BC00436B0E /* main.m in Sources */,

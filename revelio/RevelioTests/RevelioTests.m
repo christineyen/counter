@@ -12,6 +12,8 @@
 #import "Account.h"
 #import "Conversation.h"
 
+#import "ISO8601.h"
+
 @interface CYRImporter (Tests)
 @property (strong, nonatomic) Account *user;
 @property (strong, nonatomic) Account *buddy;
@@ -47,6 +49,12 @@ static NSString *const xml = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
 <event type=\"windowClosed\" sender=\"cyenatwork\" time=\"2007-08-09T02:13:50-07:00\"/> \
 </chat>";
 
+static NSString *const estXML = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
+<chat xmlns=\"http://purl.org/net/ulf/ns/0.4-02\" account=\"cyenatwork\" service=\"AIM\"><event type=\"windowOpened\" sender=\"cyenatwork\" time=\"2008-10-08T12:55:55-04:00\"/> \
+<message sender=\"sjw0n\" time=\"2008-10-08T12:55:55-04:00\"><div><span style=\"font-family: Lucida Grande; font-size: 12pt;\">m... is seth cmin in?</span></div></message> \
+<event type=\"windowClosed\" sender=\"cyenatwork\" time=\"2008-10-09T02:13:50-04:00\"/> \
+</chat>";
+
 @implementation RevelioTests
 
 - (void)setUp
@@ -79,6 +87,8 @@ static NSString *const xml = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
     XCTAssertFalse([importer.conversation.initiated boolValue]);
     XCTAssertNotNil(importer.conversation.startTime);
     XCTAssertNotNil(importer.conversation.endTime);
+    XCTAssertEqual(-25200, [importer.conversation.tzOffset integerValue]);
+    XCTAssertEqual(1186602955, [importer.conversation.startTime timeIntervalSince1970]);
 }
 
 - (void)testParseWithAttributes {
@@ -88,6 +98,13 @@ static NSString *const xml = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
     CYRImporter *importer = [[CYRImporter alloc] initWithPath:@"foo" attributes:attrs];
     XCTAssertEqualObjects(importer.conversation.size, attrs[NSFileSize]);
     XCTAssertEqualObjects(importer.conversation.timestamp, attrs[NSFileCreationDate]);
+}
+
+- (void)testParseEST {
+    CYRImporter *importer = [[CYRImporter alloc] init];
+    [importer parseDocument:estXML];
+    XCTAssertEqual(-14400, [importer.conversation.tzOffset integerValue]);
+    XCTAssertEqual(1223484955, [importer.conversation.startTime timeIntervalSince1970]);
 }
 
 @end

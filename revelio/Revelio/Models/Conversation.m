@@ -18,6 +18,7 @@
 @dynamic startTime;
 @dynamic endTime;
 @dynamic timestamp;
+@dynamic tzOffset;
 @dynamic path;
 @dynamic user;
 @dynamic buddy;

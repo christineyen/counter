@@ -6,6 +6,8 @@
 //  Copyright (c) 2013 ChristineYen. All rights reserved.
 //
 
+#import "ISO8601.h"
+
 #import "CYRImporter.h"
 #import "CYRAppDelegate.h"
 
@@ -207,7 +209,9 @@ NSString *const kNotificationFinishedImporting = @"Finished Importing";
         self.conversation.initiated = @YES;
     }
     if (firstMsg) {
-        self.conversation.startTime = [[[self class] dateFormatter] dateFromString:[attributeDict objectForKey:@"time"]];
+        NSTimeZone *timeZone;
+        self.conversation.startTime = [NSDate dateWithISO8601String:[attributeDict objectForKey:@"time"] timeZone:&timeZone usingCalendar:nil];
+        self.conversation.tzOffset = @([timeZone secondsFromGMT]);
     }
     if (senderIsSelf) {
         self.myMsgCount += 1;
