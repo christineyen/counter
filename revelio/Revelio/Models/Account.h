@@ -21,6 +21,7 @@
 @property (strong, nonatomic) NSArray *conversationsByMessages;
 @property (strong, nonatomic) NSArray *conversationsBySize;
 @property (strong, nonatomic) NSArray *conversationsBySkew;
+@property (strong, nonatomic) NSArray *conversationsByTime;
 
 - (Conversation *)lastConversation;
 
@@ -38,9 +39,4 @@
 - (void)addSelfConversations:(NSSet *)values;
 - (void)removeSelfConversations:(NSSet *)values;
 
-@end
-
-@interface DataPoint : NSObject
-@property (strong, nonatomic) NSNumber *x;
-@property (strong, nonatomic) NSNumber *y;
 @end

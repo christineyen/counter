@@ -7,6 +7,7 @@
 //
 
 #import <XCTest/XCTest.h>
+#import <CorePlot/CorePlot.h>
 
 #import "CYRImporter.h"
 #import "Account.h"
@@ -55,6 +56,15 @@ static NSString *const estXML = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
 <event type=\"windowClosed\" sender=\"cyenatwork\" time=\"2008-10-09T02:13:50-04:00\"/> \
 </chat>";
 
+static NSString *const crossDayXML = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
+<chat xmlns=\"http://purl.org/net/ulf/ns/0.4-02\" account=\"cyenatwork\" service=\"AIM\"><event type=\"windowOpened\" sender=\"cyenatwork\" time=\"2007-08-08T22:55:54-07:00\"/> \
+<message sender=\"sjw0n\" time=\"2007-08-08T22:55:55-07:00\"><div><span style=\"font-family: Lucida Grande; font-size: 12pt;\">m... is seth cmin in?</span></div></message> \
+<message sender=\"cyenatwork\" time=\"2007-08-08T23:36:02-07:00\"><div><span style=\"font-family: Helvetica; font-size: 12pt;\">don&apos;t know, doubt it</span></div></message> \
+<message sender=\"sjw0n\" time=\"2007-08-09T00:12:02-07:00\"><div><span style=\"font-family: Lucida Grande; font-size: 12pt;\">aw</span></div></message> \
+<message sender=\"cyenatwork\" time=\"2007-08-09T01:24:02-07:00\"><div><span style=\"font-family: Helvetica; font-size: 12pt;\">want me to check if he&apos;s coming in tomorrow?</span></div></message> \
+<event type=\"windowClosed\" sender=\"cyenatwork\" time=\"2007-08-09T02:12:02-07:00\"/> \
+</chat>";
+
 @implementation RevelioTests
 
 - (void)setUp
@@ -75,9 +85,9 @@ static NSString *const estXML = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
 - (void)testParse {
     CYRImporter *importer = [[CYRImporter alloc] init];
     [importer parseDocument:xml];
-    Account *user = (Account *)importer.user;
+    Account *user = importer.user;
     XCTAssertEqualObjects(user.handle, @"cyenatwork");
-    Account *buddy = (Account *)importer.buddy;
+    Account *buddy = importer.buddy;
     XCTAssertEqualObjects(buddy.handle, @"sjw0n");
     XCTAssertEqual(9, [importer.messages count], @"incorrect: %@", importer.messages);
     NSInteger expectedTotal = [importer.conversation.msgsUser integerValue] + [importer.conversation.msgsBuddy integerValue];
@@ -105,6 +115,26 @@ static NSString *const estXML = @"<?xml version=\"1.0\" encoding=\"UTF-8\" ?> \
     [importer parseDocument:estXML];
     XCTAssertEqual(-14400, [importer.conversation.tzOffset integerValue]);
     XCTAssertEqual(1223484955, [importer.conversation.startTime timeIntervalSince1970]);
+}
+
+- (void)testCrossDay {
+    CYRImporter *importer = [[CYRImporter alloc] init];
+    [importer parseDocument:crossDayXML];
+    Account *user = importer.user;
+    user.conversations = (NSSet *)[NSOrderedSet orderedSetWithObjects:importer.conversation, nil];
+    XCTAssertEqual(1, [user.conversations count]);
+
+    XCTAssertEqual(2, [user.conversationsByTime count]);
+    // First location: 2007/08/08 22:55:55
+    NSDictionary *pt1 = user.conversationsByTime[0];
+    XCTAssertEqual(1186638955, [pt1[@(CPTBarPlotFieldBarLocation)] integerValue]);
+    XCTAssertEqual(82555, [pt1[@(CPTBarPlotFieldBarBase)] integerValue]);
+    XCTAssertEqual(86399, [pt1[@(CPTBarPlotFieldBarTip)] integerValue]);
+    // Second time: 2007/08/09 01:24:02
+    NSDictionary *pt2 = user.conversationsByTime[1];
+    XCTAssertEqual(1186642800, [pt2[@(CPTBarPlotFieldBarLocation)] integerValue]);
+    XCTAssertEqual(0, [pt2[@(CPTBarPlotFieldBarBase)] integerValue]);
+    XCTAssertEqual(5042, [pt2[@(CPTBarPlotFieldBarTip)] integerValue]);
 }
 
 @end
