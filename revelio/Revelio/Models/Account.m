@@ -25,6 +25,7 @@
 @dynamic conversations;
 @dynamic selfConversations;
 
+@synthesize color = _color;
 @synthesize conversationsByCount = _conversationsByCount;
 @synthesize conversationsByMessages = _conversationsByMessages;
 @synthesize conversationsBySize = _conversationsBySize;

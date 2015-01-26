@@ -40,6 +40,7 @@ typedef enum {
 @property (strong, nonatomic) CPTGraph *graph;
 @property (nonatomic) TabMode tabMode;
 @property (nonatomic) QuantityMode quantityMode;
+@property (nonatomic) NSInteger identCount;
 
 @property (weak) IBOutlet NSSegmentedControl *quantitySegmentedControl;
 @property (weak) IBOutlet NSView *quantityControlView;
@@ -51,12 +52,11 @@ typedef enum {
 - (void)_fetchBuddies:(void(^)(void))complete;
 - (NSString *)_quantityYAxisTitle;
 - (void)_reloadAndRescaleAxes;
-- (CPTPlot *)_buildPlot:(NSString *)identifier;
-- (CPTPlot *)_buildQuantityPlot:(NSString *)identifier;
-- (CPTPlot *)_buildSkewPlot:(NSString *)identifier;
-- (CPTPlot *)_buildTimePlot:(NSString *)identifier;
-- (CPTColor *)_colorForIdentifier:(NSString *)identifier;
-- (CPTColor *)_colorForIdentifier:(NSString *)identifier alpha:(CGFloat)alpha;
+- (CPTPlot *)_buildPlot:(Account *)account;
+- (CPTPlot *)_buildQuantityPlot:(Account *)account;
+- (CPTPlot *)_buildSkewPlot:(Account *)account;
+- (CPTPlot *)_buildTimePlot:(Account *)account;
+- (CPTColor *)_colorForIdentifier:(Account *)account alpha:(CGFloat)alpha;
 @end
 
 @implementation CYRMainWindowController
@@ -76,6 +76,7 @@ static CGFloat kLineWidthDefault = 1.0;
 - (void)windowDidLoad {
     [super windowDidLoad];
     
+    self.identCount = 0;
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     
@@ -191,7 +192,7 @@ static CGFloat kLineWidthDefault = 1.0;
         [self.graph.legend removePlot:plot];
     }];
     [newUsers enumerateObjectsUsingBlock:^(Account *account, NSUInteger idx, BOOL *stop) {
-        CPTPlot *plot = [self _buildPlot:account.handle];
+        CPTPlot *plot = [self _buildPlot:account];
         [self.graph addPlot:plot];
         [self.graph.legend addPlot:plot];
     }];
@@ -283,7 +284,7 @@ static CGFloat kLineWidthDefault = 1.0;
     }];
     
     [self.selectedBuddies enumerateObjectsUsingBlock:^(Account *account, NSUInteger idx, BOOL *stop) {
-        CPTPlot *plot = [self _buildPlot:account.handle];
+        CPTPlot *plot = [self _buildPlot:account];
         [self.graph addPlot:plot];
         [self.graph.legend addPlot:plot];
     }];
@@ -408,27 +409,27 @@ static CGFloat kLineWidthDefault = 1.0;
     self.graphView.hostedGraph.axisSet.axes = @[ xAxis, yAxis ];
 }
 
-- (CPTPlot *)_buildPlot:(NSString *)identifier {
+- (CPTPlot *)_buildPlot:(Account *)account {
     if (self.tabMode == kTabQuantity) {
-        return [self _buildQuantityPlot:identifier];
+        return [self _buildQuantityPlot:account];
     } else if (self.tabMode == kTabSkew) {
-        return [self _buildSkewPlot:identifier];
+        return [self _buildSkewPlot:account];
     } else if (self.tabMode == kTabTime) {
-        return [self _buildTimePlot:identifier];
+        return [self _buildTimePlot:account];
     }
     return nil;
 }
 
-- (CPTPlot *)_buildQuantityPlot:(NSString *)identifier {
+- (CPTPlot *)_buildQuantityPlot:(Account *)account {
     // Create a plot that uses the data source method
     CPTScatterPlot *plot = [[CPTScatterPlot alloc] init];
-    plot.identifier = identifier;
+    plot.identifier = account.handle;
     plot.dataSource = self;
     plot.delegate   = self;
     plot.plotSymbolMarginForHitDetection = 5.0;
     
     // Set line style
-    CPTColor *color                  = [self _colorForIdentifier:identifier];
+    CPTColor *color                  = [self _colorForIdentifier:account alpha:1];
     CPTColor *fillColor              = [color colorWithAlphaComponent:0.25];
     CPTMutableLineStyle *lineStyle   = [plot.dataLineStyle mutableCopy];
     lineStyle.lineWidth              = kLineWidthDefault;
@@ -453,15 +454,15 @@ static CGFloat kLineWidthDefault = 1.0;
     return plot;
 }
 
-- (CPTPlot *)_buildSkewPlot:(NSString *)identifier {
+- (CPTPlot *)_buildSkewPlot:(Account *)account {
     // Create a plot that uses the data source method
     CPTBarPlot *plot = [[CPTBarPlot alloc] init];
-    plot.identifier = identifier;
+    plot.identifier = account.handle;
     plot.dataSource = self;
     plot.delegate   = self;
 
     // Set line and fill styles
-    CPTColor *color = [self _colorForIdentifier:identifier alpha:0.3];
+    CPTColor *color = [self _colorForIdentifier:account alpha:0.3];
     CPTMutableLineStyle *lineStyle = [CPTMutableLineStyle lineStyle];
     lineStyle.lineColor = [color colorWithAlphaComponent:0.5];
     plot.lineStyle = lineStyle;
@@ -472,16 +473,16 @@ static CGFloat kLineWidthDefault = 1.0;
     return plot;
 }
 
-- (CPTPlot *)_buildTimePlot:(NSString *)identifier {
+- (CPTPlot *)_buildTimePlot:(Account *)account {
     // Create a plot that uses the data source method
     CPTBarPlot *plot = [[CPTBarPlot alloc] init];
-    plot.identifier = identifier;
+    plot.identifier = account.handle;
     plot.dataSource = self;
     plot.delegate   = self;
     plot.barBasesVary = YES;
     
     // Set line and fill styles
-    CPTColor *color = [self _colorForIdentifier:identifier alpha:0.3];
+    CPTColor *color = [self _colorForIdentifier:account alpha:0.3];
     CPTMutableLineStyle *lineStyle = [CPTMutableLineStyle lineStyle];
     lineStyle.lineColor = [color colorWithAlphaComponent:0.5];
     plot.lineStyle = lineStyle;
@@ -492,16 +493,39 @@ static CGFloat kLineWidthDefault = 1.0;
     return plot;
 }
 
-- (CPTColor *)_colorForIdentifier:(NSString *)identifier {
-    return [self _colorForIdentifier:identifier alpha:1];
-}
+- (CPTColor *)_colorForIdentifier:(Account *)account alpha:(CGFloat)alpha {
+    if (account.color == nil) {
+        CGFloat h;
+        if (self.identCount < 20) {
+            h = (100 - ((15 * self.identCount) % 100)) / 100.0;
+            self.identCount += 1;
+        } else {
+            h = (float)rand() / RAND_MAX;
+        }
 
-- (CPTColor *)_colorForIdentifier:(NSString *)identifier alpha:(CGFloat)alpha {
-    NSUInteger hash = [identifier hash];
-    NSUInteger r = (hash & 0xFF0000) >> 16;
-    NSUInteger g = (hash & 0x00FF00) >> 8;
-    NSUInteger b = hash & 0x0000FF;
-    return [CPTColor colorWithComponentRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:alpha];
+        // Aesthetically pleasing color combo
+        CGFloat s = 0.6;
+        CGFloat v = 0.65;
+
+        // Per http://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
+        NSInteger i = floor(h * 6);
+        CGFloat f = h * 6 - i;
+        CGFloat p = v * (1 - s);
+        CGFloat q = v * (1 - f * s);
+        CGFloat t = v * (1 - (1 - f) * s);
+        CGFloat r, g, b;
+        switch (i % 6) {
+            case 0: r = v, g = t, b = p; break;
+            case 1: r = q, g = v, b = p; break;
+            case 2: r = p, g = v, b = t; break;
+            case 3: r = p, g = q, b = v; break;
+            case 4: r = t, g = p, b = v; break;
+            case 5: r = v, g = p, b = q; break;
+        }
+        CPTColor *color = [CPTColor colorWithComponentRed:r green:g blue:b alpha:alpha];
+        account.color = color;
+    }
+    return [account.color colorWithAlphaComponent:alpha];
 }
 
 @end

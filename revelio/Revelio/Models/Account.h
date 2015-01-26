@@ -9,13 +9,14 @@
 #import <Foundation/Foundation.h>
 #import <CoreData/CoreData.h>
 
-@class Conversation;
+@class Conversation, CPTColor;
 
 @interface Account : NSManagedObject
 
 @property (strong, nonatomic) NSString * handle;
 @property (strong, nonatomic) NSSet *conversations;
 @property (strong, nonatomic) NSSet *selfConversations;
+@property (strong, nonatomic) CPTColor *color;
 
 @property (strong, nonatomic) NSArray *conversationsByCount;
 @property (strong, nonatomic) NSArray *conversationsByMessages;
