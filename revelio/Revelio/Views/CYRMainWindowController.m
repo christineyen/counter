@@ -80,6 +80,8 @@ static CGFloat kLineWidthDefault = 1.0;
     self.tableView.dataSource = self;
     
     self.graphView.hostedGraph = self.graph;
+    self.graphView.layer.borderColor = [NSColor redColor].CGColor;
+    self.graphView.layer.borderWidth = 1.0;
     
     [self.quantitySegmentedControl setTarget:self];
     [self.quantitySegmentedControl setAction:@selector(clickedQuantitySegmentedControl:)];
@@ -104,7 +106,7 @@ static CGFloat kLineWidthDefault = 1.0;
         _graph = [[CPTXYGraph alloc] initWithFrame:CGRectZero]; //xScaleType:CPTScaleTypeLinear yScaleType:CPTScaleTypeLinear];
         // Setup scatter plot space
         CPTXYPlotSpace *plotSpace = (CPTXYPlotSpace *)_graph.defaultPlotSpace;
-        plotSpace.allowsUserInteraction = YES;
+        plotSpace.allowsUserInteraction = (self.tabMode == kTabQuantity);
         plotSpace.delegate              = self;
         
         // Axes
@@ -141,19 +143,6 @@ static CGFloat kLineWidthDefault = 1.0;
         legend.borderLineStyle = x.axisLineStyle;
         legend.cornerRadius    = 5.0;
         legend.numberOfColumns = 1;
-//        CPTLegend *theLegend = [CPTLegend legendWithGraph:graph];
-//        theLegend.numberOfRows    = 2;
-//        theLegend.fill            = [CPTFill fillWithColor:[CPTColor colorWithGenericGray:CPTFloat(0.15)]];
-//        theLegend.borderLineStyle = barLineStyle;
-//        theLegend.cornerRadius    = 10.0;
-//        theLegend.swatchSize      = CGSizeMake(20.0, 20.0);
-//        whiteTextStyle.fontSize   = 16.0;
-//        theLegend.textStyle       = whiteTextStyle;
-//        theLegend.rowMargin       = 10.0;
-//        theLegend.paddingLeft     = 12.0;
-//        theLegend.paddingTop      = 12.0;
-//        theLegend.paddingRight    = 12.0;
-//        theLegend.paddingBottom   = 12.0;
 
         _graph.legend = legend;
         _graph.legendAnchor           = CPTRectAnchorTopRight;
@@ -205,7 +194,7 @@ static CGFloat kLineWidthDefault = 1.0;
         [self.graph addPlot:plot];
         [self.graph.legend addPlot:plot];
     }];
-    
+
     // Set new selection
     self.selectedBuddies = newSelection;
     [self _reloadAndRescaleAxes];
@@ -300,6 +289,12 @@ static CGFloat kLineWidthDefault = 1.0;
     
     self.quantityControlView.hidden = !(self.tabMode == kTabQuantity);
     
+    if (self.tabMode == kTabQuantity) {
+        self.graph.defaultPlotSpace.allowsUserInteraction = YES;
+    } else {
+        self.graph.defaultPlotSpace.allowsUserInteraction = NO;
+    }
+
     [self _reloadAndRescaleAxes];
 }
 
@@ -352,16 +347,25 @@ static CGFloat kLineWidthDefault = 1.0;
     CPTXYAxis *yAxis = axisSet.yAxis;
 
     // Set up common X-Axis handling
-    CPTMutablePlotRange *xRange = [plotSpace.xRange mutableCopy];
-    NSDecimal earliestDate = xRange.location;
-    [xRange expandRangeByFactor:CPTDecimalFromDouble(1 + 2*xOffset)];
-    xAxis.titleLocation = xRange.midPoint;
+    NSDecimal earliestDate = plotSpace.xRange.location;
+    CPTMutablePlotRange *originalXRange = [plotSpace.xRange mutableCopy];
+
+    xAxis.titleLocation = plotSpace.xRange.midPoint;
     xAxis.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0); // probably doesn't have to go here
-    plotSpace.xRange = xRange;
+
+    CPTMutablePlotRange *expandedXRange = [plotSpace.xRange mutableCopy];
+    [expandedXRange expandRangeByFactor:CPTDecimalFromDouble(1 + 2*xOffset)];
+    plotSpace.xRange = expandedXRange;
 
     // Set up common Y-Axis handling
-    yAxis.orthogonalCoordinateDecimal = CPTDecimalAdd(earliestDate, CPTDecimalMultiply(CPTDecimalSubtract(xRange.location, earliestDate), CPTDecimalFromFloat(xOffset)));
+    NSDecimal orthogonal = CPTDecimalAdd(earliestDate, CPTDecimalMultiply(CPTDecimalSubtract(expandedXRange.location, earliestDate), CPTDecimalFromFloat(xOffset)));
+    yAxis.orthogonalCoordinateDecimal = orthogonal;
     yAxis.labelingPolicy = CPTAxisLabelingPolicyAutomatic;
+    yAxis.axisLabels = nil;
+    yAxis.majorTickLocations = nil;
+
+    [originalXRange unionPlotRange:[CPTPlotRange plotRangeWithLocation:orthogonal length:CPTDecimalFromInt(0)]];
+    xAxis.visibleRange = originalXRange;
 
     if (self.tabMode == kTabQuantity) {
         CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
@@ -370,26 +374,33 @@ static CGFloat kLineWidthDefault = 1.0;
         plotSpace.yRange = yRange;
 
         yAxis.title = [self _quantityYAxisTitle];
+        yAxis.visibleRange = plotSpace.yRange;
     } else if (self.tabMode == kTabTime) {
-        plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(-7200) length:CPTDecimalFromInt(100800)];
+        plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(-8000) length:CPTDecimalFromInt(100800)];
 
         yAxis.title = @"time of day in conversation";
-        yAxis.labelingPolicy = CPTAxisLabelingPolicyNone;
+        yAxis.labelingPolicy = CPTAxisLabelingPolicyLocationsProvided;
 
         NSMutableSet *labels = [NSMutableSet set];
+        NSMutableSet *tickLocations = [NSMutableSet set];
         for (NSUInteger i = 0; i <= 24; i += 2) {
             CPTAxisLabel *label = [[CPTAxisLabel alloc] initWithText:[NSString stringWithFormat:@"%.2lu:00", i]
                                                            textStyle:yAxis.labelTextStyle];
-            label.tickLocation = CPTDecimalFromUnsignedInteger(i*3600);
+            NSDecimal location = CPTDecimalFromUnsignedInteger(i*3600);
+            [tickLocations addObject:[NSDecimalNumber decimalNumberWithDecimal:location]];
+            label.tickLocation = location;
             label.offset = yAxis.labelOffset;
             [labels addObject:label];
         }
         yAxis.axisLabels = labels;
+        yAxis.majorTickLocations = tickLocations;
+        yAxis.visibleRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(0) length:CPTDecimalFromInt(86400)];
     } else if (self.tabMode == kTabSkew) {
         plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromDouble(-1.2) length:CPTDecimalFromDouble(2.4)];
-        
+
         yAxis.title = @"They sent more messages                              I sent more messages";
         yAxis.titleLocation = CPTDecimalFromDouble(0);
+        yAxis.visibleRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(-1) length:CPTDecimalFromInt(2)];
     }
     
     yAxis.titleLocation = plotSpace.yRange.midPoint;
@@ -448,16 +459,14 @@ static CGFloat kLineWidthDefault = 1.0;
     plot.dataSource = self;
     plot.delegate   = self;
 
-    // Set line style
-    CPTColor *color                   = [self _colorForIdentifier:identifier];
-    CPTMutableLineStyle *barLineStyle = [[CPTMutableLineStyle alloc] init];
-    barLineStyle.lineWidth            = 1.0;
-    barLineStyle.lineColor            = color;
-    
-    // Create first bar plot
-    plot.lineStyle       = barLineStyle;
-    plot.fill            = [CPTFill fillWithColor:color];
-    plot.barWidth        = CPTDecimalFromFloat(20.0f); // bar is 50% of the available space
+    // Set line and fill styles
+    CPTColor *color = [self _colorForIdentifier:identifier alpha:0.3];
+    CPTMutableLineStyle *lineStyle = [CPTMutableLineStyle lineStyle];
+    lineStyle.lineColor = [color colorWithAlphaComponent:0.5];
+    plot.lineStyle = lineStyle;
+    plot.fill = [CPTFill fillWithColor:color];
+    plot.barWidthsAreInViewCoordinates = YES;
+    plot.barWidth = CPTDecimalFromFloat(10.0f);
     
     return plot;
 }
@@ -469,15 +478,15 @@ static CGFloat kLineWidthDefault = 1.0;
     plot.dataSource = self;
     plot.delegate   = self;
     plot.barBasesVary = YES;
-
-    // Set line style
-    CPTColor *color                   = [self _colorForIdentifier:identifier alpha:0.5];
     
-    // Create first bar plot
-    plot.lineStyle       = nil;
-    plot.fill            = [CPTFill fillWithColor:color];
+    // Set line and fill styles
+    CPTColor *color = [self _colorForIdentifier:identifier alpha:0.3];
+    CPTMutableLineStyle *lineStyle = [CPTMutableLineStyle lineStyle];
+    lineStyle.lineColor = [color colorWithAlphaComponent:0.5];
+    plot.lineStyle = lineStyle;
+    plot.fill = [CPTFill fillWithColor:color];
     plot.barWidthsAreInViewCoordinates = YES;
-    plot.barWidth        = CPTDecimalFromFloat(10); // bar is 50% of the available space
+    plot.barWidth = CPTDecimalFromFloat(10.0f);
     
     return plot;
 }
