@@ -80,9 +80,8 @@ static CGFloat kLineWidthDefault = 1.0;
     self.tableView.dataSource = self;
     
     self.graphView.hostedGraph = self.graph;
-    self.graphView.layer.borderColor = [NSColor redColor].CGColor;
-    self.graphView.layer.borderWidth = 1.0;
-    
+    // Can do things to self.graph.plotAreaFrame to style plot area
+
     [self.quantitySegmentedControl setTarget:self];
     [self.quantitySegmentedControl setAction:@selector(clickedQuantitySegmentedControl:)];
     
@@ -139,10 +138,12 @@ static CGFloat kLineWidthDefault = 1.0;
 
         // Add legend
         CPTLegend *legend      = [CPTLegend legendWithGraph:_graph];
+        legend.fill = [CPTFill fillWithColor:[CPTColor colorWithGenericGray:CPTFloat(0.95)]];
         legend.textStyle       = x.titleTextStyle;
         legend.borderLineStyle = x.axisLineStyle;
         legend.cornerRadius    = 5.0;
         legend.numberOfColumns = 1;
+        legend.paddingLeft = 5.0;
 
         _graph.legend = legend;
         _graph.legendAnchor           = CPTRectAnchorTopRight;

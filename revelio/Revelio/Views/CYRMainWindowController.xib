@@ -26,7 +26,7 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <scrollView misplaced="YES" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BI7-et-PU7" userLabel="Buddy List">
-                        <rect key="frame" x="0.0" y="2" width="369" height="711"/>
+                        <rect key="frame" x="0.0" y="2" width="370" height="711"/>
                         <clipView key="contentView" misplaced="YES" id="eRX-gz-rrF">
                             <rect key="frame" x="1" y="0.0" width="238" height="134"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -66,7 +66,7 @@
                                             <sortDescriptor key="sortDescriptorPrototype" selector="compare:" sortKey="conversations.@count"/>
                                             <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                         </tableColumn>
-                                        <tableColumn identifier="lastColumn" editable="NO" width="185" minWidth="10" maxWidth="3.4028234663852886e+38" id="Kcn-9B-yCC">
+                                        <tableColumn identifier="lastColumn" editable="NO" width="186" minWidth="10" maxWidth="3.4028234663852886e+38" id="Kcn-9B-yCC">
                                             <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Last Conversation Date">
                                                 <font key="font" metaFont="smallSystem"/>
                                                 <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
@@ -101,11 +101,14 @@
                             <autoresizingMask key="autoresizingMask"/>
                         </tableHeaderView>
                     </scrollView>
-                    <customView ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yks-tA-3ce" userLabel="Quantity Control View">
-                        <rect key="frame" x="368" y="2" width="704" height="50"/>
+                    <customView horizontalCompressionResistancePriority="1000" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qFo-eC-LK5" customClass="CPTGraphHostingView">
+                        <rect key="frame" x="368" y="0.0" width="704" height="712"/>
+                    </customView>
+                    <customView misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yks-tA-3ce" userLabel="Quantity Control View">
+                        <rect key="frame" x="550" y="2" width="370" height="24"/>
                         <subviews>
-                            <segmentedControl verticalHuggingPriority="750" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="I0j-Q3-H1H">
-                                <rect key="frame" x="99" y="13" width="249" height="24"/>
+                            <segmentedControl verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="I0j-Q3-H1H">
+                                <rect key="frame" x="105" y="0.0" width="249" height="24"/>
                                 <segmentedCell key="cell" borderStyle="border" alignment="left" style="rounded" trackingMode="selectOne" id="J5t-En-2lb">
                                     <font key="font" metaFont="system"/>
                                     <segments>
@@ -118,8 +121,8 @@
                                     <action selector="clickedQuantitySegmentedControl:" target="-2" id="0Vo-pM-Fg3"/>
                                 </connections>
                             </segmentedControl>
-                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" ambiguous="YES" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xev-lG-CCZ">
-                                <rect key="frame" x="12" y="19" width="75" height="17"/>
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Xev-lG-CCZ">
+                                <rect key="frame" x="10" y="5" width="75" height="17"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="cumulative:" id="8d4-dI-O6R">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -128,33 +131,46 @@
                             </textField>
                         </subviews>
                         <constraints>
-                            <constraint firstAttribute="height" constant="50" id="98i-iY-t7o"/>
-                            <constraint firstItem="I0j-Q3-H1H" firstAttribute="leading" secondItem="Xev-lG-CCZ" secondAttribute="trailing" constant="16" id="G62-xe-AZs"/>
-                            <constraint firstItem="Xev-lG-CCZ" firstAttribute="leading" secondItem="yks-tA-3ce" secondAttribute="leading" constant="14" id="iYR-x9-vq2"/>
+                            <constraint firstAttribute="bottom" secondItem="I0j-Q3-H1H" secondAttribute="bottom" id="450-nx-Cbd"/>
+                            <constraint firstAttribute="height" constant="24" id="98i-iY-t7o"/>
+                            <constraint firstAttribute="width" constant="370" id="EVg-8P-dNj"/>
+                            <constraint firstItem="I0j-Q3-H1H" firstAttribute="leading" secondItem="Xev-lG-CCZ" secondAttribute="trailing" constant="10" id="G62-xe-AZs"/>
+                            <constraint firstAttribute="bottom" secondItem="Xev-lG-CCZ" secondAttribute="bottom" constant="5" id="YST-qF-384"/>
+                            <constraint firstItem="Xev-lG-CCZ" firstAttribute="leading" secondItem="yks-tA-3ce" secondAttribute="leading" constant="10" id="iYR-x9-vq2"/>
                         </constraints>
                     </customView>
-                    <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="L7p-ff-B1H">
-                        <rect key="frame" x="528" y="682" width="396" height="24"/>
+                    <segmentedControl verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="L7p-ff-B1H">
+                        <rect key="frame" x="528" y="682" width="308" height="24"/>
+                        <constraints>
+                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="8Qb-uX-AgR"/>
+                        </constraints>
                         <segmentedCell key="cell" borderStyle="border" alignment="left" style="rounded" trackingMode="selectOne" id="Lz3-78-L76">
                             <font key="font" metaFont="system"/>
                             <segments>
-                                <segment label="Quantity" width="130" selected="YES"/>
-                                <segment label="Time" width="129" tag="1"/>
-                                <segment label="Skew" width="129"/>
+                                <segment label="Quantity" width="100" selected="YES"/>
+                                <segment label="Time" width="100" tag="1"/>
+                                <segment label="Skew" width="100"/>
                             </segments>
                         </segmentedCell>
                         <connections>
                             <action selector="clickedModeSegmentedControl:" target="-2" id="DPY-Q3-ezj"/>
                         </connections>
                     </segmentedControl>
-                    <customView horizontalCompressionResistancePriority="1000" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qFo-eC-LK5" customClass="CPTGraphHostingView">
-                        <rect key="frame" x="368" y="50" width="704" height="626"/>
-                    </customView>
                 </subviews>
                 <constraints>
+                    <constraint firstItem="qFo-eC-LK5" firstAttribute="top" secondItem="2" secondAttribute="top" id="9Ne-gT-uyM"/>
+                    <constraint firstItem="qFo-eC-LK5" firstAttribute="centerX" secondItem="yks-tA-3ce" secondAttribute="centerX" constant="-15" id="BDc-Yb-QG5"/>
+                    <constraint firstItem="qFo-eC-LK5" firstAttribute="centerX" secondItem="L7p-ff-B1H" secondAttribute="centerX" constant="-6" id="D94-vR-Jac"/>
+                    <constraint firstItem="qFo-eC-LK5" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="L7p-ff-B1H" secondAttribute="trailing" id="FyT-Ds-sAP"/>
                     <constraint firstItem="BI7-et-PU7" firstAttribute="top" secondItem="2" secondAttribute="top" id="Mbk-kr-dVg"/>
+                    <constraint firstAttribute="bottom" secondItem="yks-tA-3ce" secondAttribute="bottom" constant="10" id="c2B-zH-KtQ"/>
                     <constraint firstItem="BI7-et-PU7" firstAttribute="leading" secondItem="2" secondAttribute="leading" id="dbq-In-Yj6"/>
+                    <constraint firstAttribute="bottom" secondItem="qFo-eC-LK5" secondAttribute="bottom" id="ho4-04-XTL"/>
+                    <constraint firstItem="qFo-eC-LK5" firstAttribute="leading" relation="lessThanOrEqual" secondItem="L7p-ff-B1H" secondAttribute="leading" id="olf-FA-wCx"/>
+                    <constraint firstItem="L7p-ff-B1H" firstAttribute="top" secondItem="2" secondAttribute="top" constant="10" id="pZC-Vh-bZy"/>
+                    <constraint firstItem="qFo-eC-LK5" firstAttribute="leading" secondItem="BI7-et-PU7" secondAttribute="trailing" id="rGg-Ut-fmy"/>
                     <constraint firstAttribute="bottom" secondItem="BI7-et-PU7" secondAttribute="bottom" id="taw-rp-yax"/>
+                    <constraint firstAttribute="trailing" secondItem="qFo-eC-LK5" secondAttribute="trailing" id="tb4-rM-3mb"/>
                 </constraints>
             </view>
             <connections>
