@@ -182,16 +182,17 @@ NSString *const kNotificationFinishedImporting = @"Finished Importing";
 }
 
 - (void)parseDocument:(NSString *)documentContents {
-    self.parser = [[NSXMLParser alloc] initWithData:[documentContents dataUsingEncoding:NSUTF8StringEncoding]];
+    self.parser = [[NSXMLParser alloc] initWithData:[documentContents dataUsingEncoding:NSUTF16StringEncoding]];
     self.parser.delegate = self;
-    if (![self.parser parse]) {
-        NSLog(@"FAILED PARSING: %@", [self.parser parserError]);
-    }
+    [self.parser parse]; // might return NO if it failed at some point
     self.parser = nil;
     self.user = [self _ensureUser:[[self class] handle]];
     self.buddy = [self _ensureUser:self.buddyHandle];
     self.conversation.user = self.user;
     self.conversation.buddy = self.buddy;
+    self.conversation.msgsUser = @(self.myMsgCount);
+    self.conversation.msgsBuddy = @(self.totalCount - self.myMsgCount);
+    self.conversation.endTime = [[[self class] dateFormatter] dateFromString:self.latestTime];
 }
 
 #pragma mark - NSXMLParserDelegate methods
@@ -242,16 +243,8 @@ NSString *const kNotificationFinishedImporting = @"Finished Importing";
     self.messageComponents = [NSMutableArray array];
 }
 
-- (void)parserDidEndDocument:(NSXMLParser *)parser {
-    self.conversation.msgsUser = @(self.myMsgCount);
-    self.conversation.msgsBuddy = @(self.totalCount - self.myMsgCount);
-    self.conversation.endTime = [[[self class] dateFormatter] dateFromString:self.latestTime];
-}
-
 - (void)parser:(NSXMLParser *)parser parseErrorOccurred:(NSError *)parseError {
-    NSLog(@"parser: %@", parser);
-    NSLog(@"parse error occurred: %@, %lu", self.conversation.path, parser.lineNumber);
-    NSLog(@"parse error: %@", parseError);
+    NSLog(@"parse error occurred: %@ (%@: line %lu)", [parseError userInfo], self.conversation.path, parser.lineNumber);
 }
 
 #pragma mark - Properties

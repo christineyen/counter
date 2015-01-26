@@ -84,6 +84,7 @@
         NSCalendar *cal = [NSCalendar currentCalendar];
         [self.sortedConversations enumerateObjectsUsingBlock:^(Conversation *conv, NSUInteger idx, BOOL *stop) {
             NSTimeZone *timeZone = [NSTimeZone timeZoneForSecondsFromGMT:[conv.tzOffset integerValue]];
+
             NSDateComponents *startComponents = [cal componentsInTimeZone:timeZone fromDate:conv.startTime];
             NSDateComponents *endComponents = [cal componentsInTimeZone:timeZone fromDate:conv.endTime];
 
@@ -98,23 +99,28 @@
                 return;
             }
 
-            // Across days!
-            if (endComponents.day - startComponents.day > 1) {
-                NSLog(@"AAAAAAA difference of %lu days", endComponents.day - startComponents.day);
-                return;
-            }
-
             point[@(CPTBarPlotFieldBarLocation)] = @([conv.startTime timeIntervalSince1970]);
             point[@(CPTBarPlotFieldBarBase)] = [self _timeOfDayFromComponents:startComponents];
             point[@(CPTBarPlotFieldBarTip)] = [self _endOfDayTime];
             [array addObject:point];
+
+            // Across days!
+            startComponents.hour = startComponents.minute = startComponents.second = 0;
+            while (endComponents.day - startComponents.day > 1) {
+                startComponents.day += 1;
+                NSMutableDictionary *midPoint = [NSMutableDictionary dictionary];
+                midPoint[@(CPTBarPlotFieldBarLocation)] = @([[startComponents date] timeIntervalSince1970]);
+                midPoint[@(CPTBarPlotFieldBarBase)] = @0;
+                midPoint[@(CPTBarPlotFieldBarTip)] = [self _endOfDayTime];
+                [array addObject:point];
+            }
 
             NSMutableDictionary *secondPoint = [NSMutableDictionary dictionary];
             secondPoint[@(CPTBarPlotFieldBarTip)] = [self _timeOfDayFromComponents:endComponents];
             // Set endComponents to beginning of day
             endComponents.hour = endComponents.minute = endComponents.second = 0;
             secondPoint[@(CPTBarPlotFieldBarLocation)] = @([[endComponents date] timeIntervalSince1970]);
-            secondPoint[@(CPTBarPlotFieldBarBase)] = [self _timeOfDayFromComponents:endComponents];
+            secondPoint[@(CPTBarPlotFieldBarBase)] = @0;
             [array addObject:secondPoint];
         }];
         _conversationsByTime = array;
