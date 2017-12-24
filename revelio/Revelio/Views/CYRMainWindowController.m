@@ -114,7 +114,7 @@ static CGFloat kLineWidthDefault = 1.0;
         CPTXYAxis *x                  = axisSet.xAxis;
         x.title                       = @"Date";
         x.labelingPolicy              = CPTAxisLabelingPolicyAutomatic;
-        x.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0);
+        x.orthogonalPosition          = @(0.0);
         x.minorTicksPerInterval       = 0;
 
         NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
@@ -129,7 +129,7 @@ static CGFloat kLineWidthDefault = 1.0;
 
         CPTXYAxis *y                = axisSet.yAxis;
         y.labelingPolicy            = CPTAxisLabelingPolicyAutomatic;
-        y.majorIntervalLength       = CPTDecimalFromDouble(10);
+        y.majorIntervalLength       = @(10.0);
         y.minorTicksPerInterval     = 2;
         y.labelOffset               = 10.0;
         y.titleOffset               = 50.0;
@@ -349,36 +349,36 @@ static CGFloat kLineWidthDefault = 1.0;
     CPTXYAxis *yAxis = axisSet.yAxis;
 
     // Set up common X-Axis handling
-    NSDecimal earliestDate = plotSpace.xRange.location;
+    NSNumber *earliestDate = plotSpace.xRange.location;
     CPTMutablePlotRange *originalXRange = [plotSpace.xRange mutableCopy];
 
     xAxis.titleLocation = plotSpace.xRange.midPoint;
-    xAxis.orthogonalCoordinateDecimal = CPTDecimalFromDouble(0.0); // probably doesn't have to go here
+    xAxis.orthogonalPosition = @(0.0); // probably doesn't have to go here
 
     CPTMutablePlotRange *expandedXRange = [plotSpace.xRange mutableCopy];
-    [expandedXRange expandRangeByFactor:CPTDecimalFromDouble(1 + 2*xOffset)];
+    [expandedXRange expandRangeByFactor:@(1 + 2*xOffset)];
     plotSpace.xRange = expandedXRange;
 
     // Set up common Y-Axis handling
-    NSDecimal orthogonal = CPTDecimalAdd(earliestDate, CPTDecimalMultiply(CPTDecimalSubtract(expandedXRange.location, earliestDate), CPTDecimalFromFloat(xOffset)));
-    yAxis.orthogonalCoordinateDecimal = orthogonal;
+    NSNumber *orthogonal = @([earliestDate floatValue] + (([[expandedXRange location] floatValue]-[earliestDate floatValue]) * xOffset));
+    yAxis.orthogonalPosition = orthogonal;
     yAxis.labelingPolicy = CPTAxisLabelingPolicyAutomatic;
     yAxis.axisLabels = nil;
     yAxis.majorTickLocations = nil;
 
-    [originalXRange unionPlotRange:[CPTPlotRange plotRangeWithLocation:orthogonal length:CPTDecimalFromInt(0)]];
+    [originalXRange unionPlotRange:[CPTPlotRange plotRangeWithLocation:orthogonal length:@(0)]];
     xAxis.visibleRange = originalXRange;
 
     if (self.tabMode == kTabQuantity) {
         CPTMutablePlotRange *yRange = [plotSpace.yRange mutableCopy];
-        [yRange unionPlotRange:[CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(0) length:CPTDecimalFromInt(0)]];
-        [yRange expandRangeByFactor:CPTDecimalFromDouble(1 + 2*xOffset)];
+        [yRange unionPlotRange:[CPTPlotRange plotRangeWithLocation:@(0) length:@(0)]];
+        [yRange expandRangeByFactor:@(1 + 2*xOffset)];
         plotSpace.yRange = yRange;
 
         yAxis.title = [self _quantityYAxisTitle];
         yAxis.visibleRange = plotSpace.yRange;
     } else if (self.tabMode == kTabTime) {
-        plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(-8000) length:CPTDecimalFromInt(100800)];
+        plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:@(-8000) length:@(100800)];
 
         yAxis.title = @"time of day in conversation";
         yAxis.labelingPolicy = CPTAxisLabelingPolicyLocationsProvided;
@@ -388,21 +388,21 @@ static CGFloat kLineWidthDefault = 1.0;
         for (NSUInteger i = 0; i <= 24; i += 2) {
             CPTAxisLabel *label = [[CPTAxisLabel alloc] initWithText:[NSString stringWithFormat:@"%.2lu:00", i]
                                                            textStyle:yAxis.labelTextStyle];
-            NSDecimal location = CPTDecimalFromUnsignedInteger(i*3600);
-            [tickLocations addObject:[NSDecimalNumber decimalNumberWithDecimal:location]];
+            NSNumber *location = @(i*3600);
+            [tickLocations addObject:location];
             label.tickLocation = location;
             label.offset = yAxis.labelOffset;
             [labels addObject:label];
         }
         yAxis.axisLabels = labels;
         yAxis.majorTickLocations = tickLocations;
-        yAxis.visibleRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(0) length:CPTDecimalFromInt(86400)];
+        yAxis.visibleRange = [CPTPlotRange plotRangeWithLocation:@(0) length:@(86400)];
     } else if (self.tabMode == kTabSkew) {
-        plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromDouble(-1.2) length:CPTDecimalFromDouble(2.4)];
+        plotSpace.yRange = [CPTPlotRange plotRangeWithLocation:@(-1.2) length:@(2.4)];
 
         yAxis.title = @"They sent more messages                              I sent more messages";
-        yAxis.titleLocation = CPTDecimalFromDouble(0);
-        yAxis.visibleRange = [CPTPlotRange plotRangeWithLocation:CPTDecimalFromInt(-1) length:CPTDecimalFromInt(2)];
+        yAxis.titleLocation = @(0);
+        yAxis.visibleRange = [CPTPlotRange plotRangeWithLocation:@(-1) length:@(2)];
     }
     
     yAxis.titleLocation = plotSpace.yRange.midPoint;
@@ -449,7 +449,7 @@ static CGFloat kLineWidthDefault = 1.0;
     // Put an area gradient under the plot above
     CPTFill *areaGradientFill = [CPTFill fillWithColor:fillColor];
     plot.areaFill      = areaGradientFill;
-    plot.areaBaseValue = CPTDecimalFromDouble(0);
+    plot.areaBaseValue = @(0);
 
     return plot;
 }
@@ -468,7 +468,7 @@ static CGFloat kLineWidthDefault = 1.0;
     plot.lineStyle = lineStyle;
     plot.fill = [CPTFill fillWithColor:color];
     plot.barWidthsAreInViewCoordinates = YES;
-    plot.barWidth = CPTDecimalFromFloat(10.0f);
+    plot.barWidth = @(10.0f);
     
     return plot;
 }
@@ -488,7 +488,7 @@ static CGFloat kLineWidthDefault = 1.0;
     plot.lineStyle = lineStyle;
     plot.fill = [CPTFill fillWithColor:color];
     plot.barWidthsAreInViewCoordinates = YES;
-    plot.barWidth = CPTDecimalFromFloat(10.0f);
+    plot.barWidth = @(10.0f);
     
     return plot;
 }
